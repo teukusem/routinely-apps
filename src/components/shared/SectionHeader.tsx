@@ -21,6 +21,7 @@ export function SectionHeader({ compact = false, meta, title }: SectionHeaderPro
 const styles = StyleSheet.create({
   sectionHeader: {
     gap: spacing.xs,
+    marginTop: spacing.md,
   },
   sectionTitle: {
     color: colors.text,

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, type ColorValue } from 'react-native';
 
 import { GlassSurface } from '../GlassSurface';
 import { ProgressBar } from '../shared/ProgressBar';
@@ -34,84 +34,184 @@ function getHabitActionLabel(habit: DailyHabitView | Habit, completed: boolean):
   }
 }
 
+function getStatusAccent(status: HabitStatus, habitAccent: ColorValue): ColorValue {
+  switch (status) {
+    case 'completed':
+      return colors.success;
+    case 'due':
+      return colors.focus;
+    case 'missed':
+      return colors.warning;
+    case 'upcoming':
+      return colors.primary;
+    case 'skipped':
+      return colors.textMuted;
+    default:
+      return habitAccent;
+  }
+}
+
+function getStatusTint(status: HabitStatus): string {
+  switch (status) {
+    case 'completed':
+      return colors.successSoft;
+    case 'due':
+      return colors.focusSoft;
+    case 'missed':
+      return colors.warningSoft;
+    case 'upcoming':
+      return colors.primarySoft;
+    case 'skipped':
+      return colors.surfaceMuted;
+    default:
+      return colors.surfaceMuted;
+  }
+}
+
+function getStatusLabel(status: HabitStatus): string {
+  switch (status) {
+    case 'completed':
+      return 'Done';
+    case 'due':
+      return 'Due now';
+    case 'missed':
+      return 'Missed';
+    case 'upcoming':
+      return 'Later';
+    case 'skipped':
+      return 'Skipped';
+    default:
+      return status;
+  }
+}
+
 export function HabitCard({ habit, onToggle, showManagement = false }: HabitCardProps) {
   const dailyHabit = isDailyHabitView(habit);
   const completed = dailyHabit ? habit.status === 'completed' : false;
   const progress = dailyHabit ? habit.progress : 0;
   const status = dailyHabit ? habit.status : undefined;
+  const statusAccent = status ? getStatusAccent(status, habit.accent) : habit.accent;
+  const statusTint = status ? getStatusTint(status) : colors.surfaceMuted;
   const progressText =
     habit.goalType === 'checkbox'
       ? completed
         ? 'Completed'
-        : 'Not completed'
+        : 'Tap to complete'
       : `${progress}/${habit.target} ${habit.unit}`;
+  const progressRatio = progress / Math.max(1, habit.target);
+  const interactive = Boolean(onToggle) && !showManagement;
 
-  return (
-    <View
-      accessibilityLabel={`${habit.name}, ${progressText}, ${habit.streak} day streak`}
-      style={styles.habitCardWrap}
-    >
-      <GlassSurface borderRadius={radius.md} noPadding overflowHidden variant="nested">
-        <View style={styles.habitCard}>
-          <View style={[styles.habitAccent, { backgroundColor: habit.accent }]} />
-          <View style={styles.habitBody}>
-            <View style={styles.habitTopRow}>
-              <View style={styles.habitTitleGroup}>
-                <View style={styles.habitTitleLine}>
-                  <Text style={styles.habitName}>{habit.name}</Text>
-                  {status ? <StatusBadge status={status} /> : null}
-                </View>
-                <Text style={styles.habitMeta}>
-                  {habit.scheduleLabel} · {habit.category} · {habit.streak} day streak
-                </Text>
-                <Text style={styles.habitReminder}>{habit.reminderLabel}</Text>
-              </View>
-              {onToggle ? (
-                <Pressable
-                  accessibilityLabel={getHabitActionLabel(habit, completed)}
-                  accessibilityRole="button"
-                  onPress={() => onToggle(habit.id)}
-                  style={({ pressed }) => [
-                    styles.completeButton,
-                    completed && styles.completeButtonDone,
-                    pressed && styles.completeButtonPressed,
-                  ]}
+  const cardBody = (
+    <GlassSurface borderRadius={radius.md} noPadding overflowHidden variant="nested">
+      <View style={[styles.habitCard, { backgroundColor: statusTint }]}>
+        <View style={[styles.habitAccent, { backgroundColor: statusAccent }]} />
+        <View style={styles.habitBody}>
+          <View style={styles.habitTopRow}>
+            <View style={[styles.habitIcon, { backgroundColor: habit.accent }]}>
+              <View style={styles.habitIconDot} />
+            </View>
+            <View style={styles.habitTitleGroup}>
+              <View style={styles.habitTitleLine}>
+                <Text
+                  numberOfLines={2}
+                  style={[styles.habitName, completed && styles.habitNameCompleted]}
                 >
-                  <Ionicons
-                    color={completed ? colors.onAccent : colors.text}
-                    name={completed ? 'checkmark' : 'add'}
-                    size={18}
-                  />
-                </Pressable>
+                  {habit.name}
+                </Text>
+                {status ? <StatusBadge status={status} /> : null}
+              </View>
+              <Text numberOfLines={1} style={styles.habitMeta}>
+                {habit.scheduleLabel} · {habit.streak} day streak
+              </Text>
+              {status === 'due' || status === 'missed' ? (
+                <Text numberOfLines={1} style={styles.habitReminder}>
+                  {habit.reminderLabel}
+                </Text>
               ) : null}
             </View>
-            {dailyHabit ? (
-              <View style={styles.habitBottomRow}>
-                <ProgressBar
-                  accent={completed ? colors.success : habit.accent}
-                  value={progress / Math.max(1, habit.target)}
-                />
-                <Text style={styles.progressText}>{progressText}</Text>
-              </View>
-            ) : (
-              <Text style={styles.progressText}>
-                {habit.goalType === 'checkbox'
-                  ? 'Checkbox goal'
-                  : `Target ${habit.target} ${habit.unit}`}
-              </Text>
-            )}
-            {showManagement ? (
-              <View style={styles.managementRow}>
-                <Text style={styles.managementAction}>Detail</Text>
-                <Text style={styles.managementAction}>Edit</Text>
-                <Text style={styles.managementDanger}>Archive</Text>
+            {onToggle ? (
+              <View
+                style={[
+                  styles.actionButton,
+                  completed && styles.actionButtonDone,
+                  !completed && status === 'due' && styles.actionButtonDue,
+                  !completed && status === 'missed' && styles.actionButtonMissed,
+                ]}
+              >
+                <ActionContent completed={completed} goalType={habit.goalType} />
               </View>
             ) : null}
           </View>
+          {dailyHabit ? (
+            <View style={styles.habitBottomRow}>
+              <ProgressBar
+                accent={completed ? colors.success : statusAccent}
+                value={progressRatio}
+              />
+              <Text style={styles.progressText}>{progressText}</Text>
+            </View>
+          ) : (
+            <Text style={styles.progressText}>
+              {habit.goalType === 'checkbox'
+                ? 'Checkbox goal'
+                : `Target ${habit.target} ${habit.unit}`}
+            </Text>
+          )}
+          {showManagement ? (
+            <View style={styles.managementRow}>
+              <Text style={styles.managementAction}>Detail</Text>
+              <Text style={styles.managementAction}>Edit</Text>
+              <Text style={styles.managementDanger}>Archive</Text>
+            </View>
+          ) : null}
         </View>
-      </GlassSurface>
-    </View>
+      </View>
+    </GlassSurface>
   );
+
+  if (!interactive) {
+    return (
+      <View
+        accessibilityLabel={`${habit.name}, ${progressText}, ${habit.streak} day streak`}
+        style={styles.habitCardWrap}
+      >
+        {cardBody}
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      accessibilityLabel={getHabitActionLabel(habit, completed)}
+      accessibilityRole="button"
+      onPress={() => onToggle?.(habit.id)}
+      style={({ pressed }) => [styles.habitCardWrap, pressed && styles.habitCardPressed]}
+    >
+      {cardBody}
+    </Pressable>
+  );
+}
+
+function ActionContent({
+  completed,
+  goalType,
+}: {
+  completed: boolean;
+  goalType: Habit['goalType'];
+}) {
+  if (completed) {
+    return <Ionicons color={colors.onAccent} name="checkmark" size={22} />;
+  }
+
+  if (goalType === 'numeric') {
+    return <Text style={styles.actionLabel}>+1</Text>;
+  }
+
+  if (goalType === 'duration') {
+    return <Text style={styles.actionLabel}>+15m</Text>;
+  }
+
+  return <Ionicons color={colors.onAccent} name="checkmark" size={22} />;
 }
 
 function StatusBadge({ status }: { status: HabitStatus }) {
@@ -125,7 +225,7 @@ function StatusBadge({ status }: { status: HabitStatus }) {
 
   return (
     <View style={[styles.badge, badgeStyle]}>
-      <Text style={styles.badgeText}>{status}</Text>
+      <Text style={styles.badgeText}>{getStatusLabel(status)}</Text>
     </View>
   );
 }
@@ -135,60 +235,81 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  habitCardPressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.99 }],
+  },
   habitCard: {
     flexDirection: 'row',
     minWidth: 0,
   },
   habitAccent: {
-    width: 4,
+    width: 5,
   },
   habitBody: {
     flex: 1,
-    gap: spacing.md,
+    gap: spacing.sm,
     minWidth: 0,
-    padding: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 4,
   },
   habitTopRow: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
     flexDirection: 'row',
-    gap: spacing.md,
-    justifyContent: 'space-between',
+    gap: spacing.sm,
     minWidth: 0,
+  },
+  habitIcon: {
+    alignItems: 'center',
+    borderRadius: radius.pill,
+    flexShrink: 0,
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
+  },
+  habitIconDot: {
+    backgroundColor: colors.onAccent,
+    borderRadius: radius.pill,
+    height: 8,
+    width: 8,
   },
   habitTitleGroup: {
     flex: 1,
-    gap: spacing.xs,
+    gap: 3,
     minWidth: 0,
   },
   habitTitleLine: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.xs,
     minWidth: 0,
   },
   habitName: {
     color: colors.text,
     flexShrink: 1,
-    fontSize: 14,
-    fontWeight: '700',
-    lineHeight: 20,
+    fontSize: 16,
+    fontWeight: '800',
+    lineHeight: 21,
+  },
+  habitNameCompleted: {
+    color: colors.textMuted,
   },
   habitMeta: {
     color: colors.textMuted,
-    flexShrink: 1,
     fontSize: 12,
     fontWeight: '600',
-    lineHeight: 18,
-  },
-  habitReminder: {
-    color: colors.textMuted,
-    flexShrink: 1,
-    fontSize: 11,
-    fontWeight: '500',
     lineHeight: 16,
   },
+  habitReminder: {
+    color: colors.focus,
+    fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 15,
+  },
   badge: {
-    alignSelf: 'flex-start',
-    borderRadius: radius.sm,
+    borderRadius: radius.pill,
+    flexShrink: 0,
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
   },
@@ -211,26 +332,32 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 10,
     fontWeight: '800',
-    lineHeight: 14,
-    textTransform: 'capitalize',
+    lineHeight: 13,
   },
-  completeButton: {
+  actionButton: {
     alignItems: 'center',
-    backgroundColor: colors.surfaceMuted,
-    borderColor: colors.glassBorder,
-    borderRadius: radius.lg,
-    borderWidth: 1,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
     flexShrink: 0,
-    height: 44,
+    height: 48,
     justifyContent: 'center',
-    width: 50,
+    minWidth: 48,
+    paddingHorizontal: spacing.sm,
   },
-  completeButtonDone: {
+  actionButtonDue: {
+    backgroundColor: colors.focus,
+  },
+  actionButtonMissed: {
+    backgroundColor: colors.warning,
+  },
+  actionButtonDone: {
     backgroundColor: colors.success,
-    borderColor: colors.success,
   },
-  completeButtonPressed: {
-    transform: [{ scale: 0.98 }],
+  actionLabel: {
+    color: colors.onAccent,
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 16,
   },
   habitBottomRow: {
     alignItems: 'center',
@@ -240,11 +367,11 @@ const styles = StyleSheet.create({
   },
   progressText: {
     color: colors.textMuted,
+    flexShrink: 0,
     fontSize: 12,
     fontWeight: '700',
-    lineHeight: 18,
-    flexShrink: 0,
-    minWidth: 96,
+    lineHeight: 16,
+    minWidth: 88,
     textAlign: 'right',
   },
   managementRow: {
