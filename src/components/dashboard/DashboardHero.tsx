@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { GlassSurface } from '../GlassSurface';
+import { ProgressBar } from '../shared/ProgressBar';
 import { colors } from '../../theme/colors';
 import { radius, spacing } from '../../theme/spacing';
 
@@ -21,27 +22,35 @@ export function DashboardHero({
   selectedDateLabel,
 }: DashboardHeroProps) {
   return (
-    <GlassSurface borderRadius={radius.xl}>
+    <GlassSurface borderRadius={radius.lg} contentStyle={styles.surface}>
       <View style={styles.heroTopRow}>
         <Text style={styles.heroKicker}>{selectedDateLabel}</Text>
         <View style={[styles.heroSignal, styles.innerSurface]}>
-          <Ionicons color={colors.text} name="flash" size={14} />
+          <Ionicons color={colors.text} name="flash" size={13} />
           <Text style={styles.heroSignalText}>Focus</Text>
         </View>
       </View>
       <Text style={styles.heroTitle}>Start with the first two.</Text>
-      <Text style={styles.heroText}>
-        {dueCount} habits are ready. Recover {missedCount} missed habit before the day gets noisy.
+      <Text style={styles.heroText} numberOfLines={2}>
+        {dueCount} habits ready · {missedCount} missed to recover
       </Text>
       <View style={styles.heroFooter}>
-        <View style={[styles.heroScore, styles.innerSurface]}>
-          <Text style={styles.heroScoreValue}>{completionRate}%</Text>
-          <Text style={styles.heroScoreLabel}>completed</Text>
+        <View style={styles.heroProgress}>
+          <View style={styles.heroProgressHeader}>
+            <View style={styles.heroProgressLabelRow}>
+              <Ionicons color={colors.primary} name="checkmark-circle" size={14} />
+              <Text style={styles.heroProgressLabel}>Completed</Text>
+            </View>
+            <Text style={styles.heroProgressValue}>{completionRate}%</Text>
+          </View>
+          <ProgressBar accent={colors.primary} value={completionRate / 100} />
         </View>
         {nextHabitName ? (
           <View style={styles.heroHint}>
             <Text style={styles.heroHintValue}>Next</Text>
-            <Text style={styles.heroHintText}>{nextHabitName}</Text>
+            <Text numberOfLines={1} style={styles.heroHintText}>
+              {nextHabitName}
+            </Text>
           </View>
         ) : null}
       </View>
@@ -50,6 +59,10 @@ export function DashboardHero({
 }
 
 const styles = StyleSheet.create({
+  surface: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 4,
+  },
   innerSurface: {
     backgroundColor: colors.surfaceMuted,
     borderColor: colors.glassBorder,
@@ -59,7 +72,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   heroKicker: {
     color: colors.primary,
@@ -69,42 +82,44 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     color: colors.text,
-    fontSize: 22,
+    fontSize: 19,
     fontWeight: '800',
-    lineHeight: 28,
+    lineHeight: 24,
   },
   heroText: {
     color: colors.textMuted,
     fontSize: 13,
-    lineHeight: 19,
-    marginTop: spacing.sm,
+    lineHeight: 18,
+    marginTop: spacing.xs,
   },
   heroFooter: {
+    gap: spacing.sm,
+    marginTop: spacing.sm + 4,
+  },
+  heroProgress: {
+    gap: spacing.xs + 2,
+  },
+  heroProgressHeader: {
     alignItems: 'center',
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginTop: spacing.md,
+    justifyContent: 'space-between',
   },
-  heroScore: {
-    borderRadius: radius.lg,
-    gap: 2,
-    flexShrink: 0,
-    minWidth: 104,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+  heroProgressLabelRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.xs,
   },
-  heroScoreValue: {
-    color: colors.primary,
-    fontSize: 24,
-    fontWeight: '800',
-    lineHeight: 30,
-  },
-  heroScoreLabel: {
+  heroProgressLabel: {
     color: colors.textMuted,
     fontSize: 11,
-    fontWeight: '700',
-    lineHeight: 16,
+    fontWeight: '800',
+    lineHeight: 14,
+  },
+  heroProgressValue: {
+    color: colors.primary,
+    fontSize: 15,
+    fontWeight: '800',
+    lineHeight: 18,
   },
   heroSignal: {
     alignItems: 'center',
@@ -113,7 +128,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.xs,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingVertical: 5,
   },
   heroSignalText: {
     color: colors.text,
@@ -121,21 +136,18 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   heroHint: {
-    flex: 1,
     gap: 2,
-    minWidth: 140,
   },
   heroHintValue: {
     color: colors.textMuted,
     fontSize: 11,
     fontWeight: '800',
-    lineHeight: 16,
+    lineHeight: 14,
   },
   heroHintText: {
     color: colors.text,
     fontSize: 13,
     fontWeight: '800',
-    lineHeight: 20,
-    flexShrink: 1,
+    lineHeight: 18,
   },
 });
