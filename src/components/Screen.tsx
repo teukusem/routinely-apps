@@ -1,7 +1,8 @@
 import { PropsWithChildren } from 'react';
-import { SafeAreaView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors } from '../theme/colors';
+import { AuroraBackground } from './AuroraBackground';
 import { spacing } from '../theme/spacing';
 
 type ScreenProps = PropsWithChildren<{
@@ -10,16 +11,22 @@ type ScreenProps = PropsWithChildren<{
 
 export function Screen({ children, padded = true }: ScreenProps) {
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={[styles.content, padded && styles.padded]}>{children}</View>
-    </SafeAreaView>
+    <View style={styles.root}>
+      <AuroraBackground />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.content, padded && styles.padded]}>{children}</View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
-    backgroundColor: colors.background,
+  },
+  safeArea: {
+    backgroundColor: 'transparent',
+    flex: 1,
   },
   content: {
     flex: 1,

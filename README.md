@@ -1,7 +1,16 @@
-# Expo Boilerplate
+# Routinely
 
-Small React Native boilerplate using Expo, TypeScript, and a lightweight `src/`
-structure.
+Routinely is a habit, mood, notes, reminder, and analytics tracker built with
+Expo, React Native, and TypeScript. The current frontend is a portfolio-ready
+product shell covering Dashboard, Habits, Mood, Notes, and Analytics from the
+PRD.
+
+## Frontend Milestone
+
+This repository currently ships the frontend prototype. Habit logs, mood data,
+analytics, and reminders use local mock-backed state so the mobile experience
+can be reviewed before API integration. Backend persistence, authentication,
+offline sync, and notification delivery are intentionally deferred.
 
 ## Requirements
 
@@ -33,6 +42,7 @@ sudo xcodebuild -license
 
 ```bash
 npm run typecheck
+npm test -- --runInBand
 npm run doctor
 ```
 
@@ -45,5 +55,5 @@ src/
   theme/       colors, spacing, and design tokens
 ```
 
-Keep this boilerplate boring. Add navigation, data fetching, storage, analytics,
+Keep the Expo setup boring. Add navigation, data fetching, storage, analytics,
 or native modules when the product needs them.
