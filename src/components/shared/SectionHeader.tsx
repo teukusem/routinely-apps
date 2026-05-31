@@ -6,12 +6,18 @@ import { spacing } from '../../theme/spacing';
 type SectionHeaderProps = {
   compact?: boolean;
   meta: string;
+  spacingTop?: boolean;
   title: string;
 };
 
-export function SectionHeader({ compact = false, meta, title }: SectionHeaderProps) {
+export function SectionHeader({
+  compact = false,
+  meta,
+  spacingTop = false,
+  title,
+}: SectionHeaderProps) {
   return (
-    <View style={styles.sectionHeader}>
+    <View style={[styles.sectionHeader, spacingTop && styles.sectionHeaderSpaced]}>
       <Text style={compact ? styles.compactSectionTitle : styles.sectionTitle}>{title}</Text>
       <Text style={styles.sectionMeta}>{meta}</Text>
     </View>
@@ -20,8 +26,10 @@ export function SectionHeader({ compact = false, meta, title }: SectionHeaderPro
 
 const styles = StyleSheet.create({
   sectionHeader: {
-    gap: spacing.xs,
-    marginTop: spacing.md,
+    gap: 2,
+  },
+  sectionHeaderSpaced: {
+    marginTop: spacing.sm,
   },
   sectionTitle: {
     color: colors.text,
@@ -39,6 +47,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 11,
     fontWeight: '600',
-    lineHeight: 16,
+    lineHeight: 14,
   },
 });

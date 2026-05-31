@@ -3,14 +3,15 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { DateSelector } from '../components/dashboard/DateSelector';
 import { DashboardHero } from '../components/dashboard/DashboardHero';
+import { MoodCheckInCard } from '../components/dashboard/MoodCheckInCard';
+import { RecentReflectionsCard } from '../components/dashboard/RecentReflectionsCard';
+import { UpcomingRemindersCard } from '../components/dashboard/UpcomingRemindersCard';
 import { HabitCard } from '../components/habits/HabitCard';
 import { MetricCard } from '../components/shared/MetricCard';
 import { Panel } from '../components/shared/Panel';
 import { SectionHeader } from '../components/shared/SectionHeader';
 import {
   AppHeader,
-  MoodSelector,
-  NoteCard,
   sharedStyles,
 } from '../components/RoutinelyUI';
 import { timePeriods } from '../data/routinely';
@@ -89,7 +90,7 @@ export function DashboardScreen({
 
   return (
     <ScrollView
-      contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide]}
+      contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide, styles.screenSections]}
       showsVerticalScrollIndicator={false}
     >
       <AppHeader subcopy={headerSubcopy} />
@@ -116,7 +117,7 @@ export function DashboardScreen({
       <DateSelector datePills={datePills} onSelectDate={onSelectDate} selectedDate={selectedDate} />
 
       <Panel>
-        <SectionHeader title={scheduleTitle} meta="Grouped by when you usually do them" />
+        <SectionHeader title={scheduleTitle} meta="Grouped by when you usually do them" compact />
         {timePeriods.map((period) => {
           const periodHabits = dailyHabits.filter((habit) => habit.timePeriod === period);
           if (periodHabits.length === 0) {
@@ -137,39 +138,31 @@ export function DashboardScreen({
       <View style={styles.sideGrid}>
         <Panel>
           <SectionHeader title="Mood check-in" meta="Logged for this date" compact />
-          <MoodSelector selectedMood={selectedMood} onSelectMood={onSelectMood} />
-          <Text style={styles.caption}>
-            {moodDetail.summary} Energy {moodDetail.energyLabel}, stress {moodDetail.stressLabel}.
-          </Text>
+          <MoodCheckInCard
+            moodDetail={moodDetail}
+            onSelectMood={onSelectMood}
+            selectedMood={selectedMood}
+          />
         </Panel>
 
         <Panel>
           <SectionHeader title="Upcoming reminders" meta="Quiet nudges, not noise" compact />
-          {reminderHabits.slice(0, 3).map((habit) => (
-            <View key={habit.id} style={styles.reminderRow}>
-              <View style={[styles.reminderDot, { backgroundColor: habit.accent }]} />
-              <View style={styles.reminderCopy}>
-                <Text style={styles.reminderTitle}>{habit.name}</Text>
-                <Text style={styles.caption}>
-                  {habit.scheduleLabel} · {habit.reminderLabel}
-                </Text>
-              </View>
-            </View>
-          ))}
+          <UpcomingRemindersCard habits={reminderHabits.slice(0, 3)} />
         </Panel>
       </View>
 
       <Panel>
         <SectionHeader title="Recent reflections" meta="Small notes tied to real behavior" compact />
-        {notes.slice(0, 2).map((note) => (
-          <NoteCard key={note.id} note={note} />
-        ))}
+        <RecentReflectionsCard notes={notes.slice(0, 2)} />
       </Panel>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  screenSections: {
+    gap: spacing.lg,
+  },
   metricRow: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -178,33 +171,13 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   sideGrid: {
-    gap: spacing.md,
+    gap: spacing.lg,
   },
   caption: {
     color: colors.textMuted,
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 17,
-  },
-  reminderRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  reminderDot: {
-    borderRadius: radius.pill,
-    height: 10,
-    width: 10,
-  },
-  reminderCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  reminderTitle: {
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: '800',
-    lineHeight: 18,
   },
   createButton: {
     alignItems: 'center',

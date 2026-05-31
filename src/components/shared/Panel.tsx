@@ -5,7 +5,7 @@ import { radius, spacing } from '../../theme/spacing';
 
 export function Panel({ children }: { children: React.ReactNode }) {
   return (
-    <GlassSurface borderRadius={radius.lg} style={styles.panel} variant="panel">
+    <GlassSurface borderRadius={radius.lg} contentStyle={styles.panel} variant="panel">
       {children}
     </GlassSurface>
   );
@@ -13,6 +13,6 @@ export function Panel({ children }: { children: React.ReactNode }) {
 
 const styles = StyleSheet.create({
   panel: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
 });

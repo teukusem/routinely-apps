@@ -40,27 +40,50 @@ export function AppHeader({ subcopy = 'Daily plan' }: AppHeaderProps) {
   );
 }
 
+const MOOD_OPTIONS = [
+  { score: 1, emoji: '😔', label: 'Rough' },
+  { score: 2, emoji: '😕', label: 'Low' },
+  { score: 3, emoji: '😐', label: 'OK' },
+  { score: 4, emoji: '🙂', label: 'Good' },
+  { score: 5, emoji: '😄', label: 'Great' },
+] as const;
+
 export function MoodSelector({
   selectedMood,
   onSelectMood,
+  variant = 'default',
 }: {
   selectedMood: number;
   onSelectMood: (mood: number) => void;
+  variant?: 'default' | 'rich';
 }) {
+  const rich = variant === 'rich';
+
   return (
     <View style={styles.moodOptions}>
-      {[1, 2, 3, 4, 5].map((mood) => {
-        const selected = selectedMood === mood;
+      {MOOD_OPTIONS.map(({ score, emoji, label }) => {
+        const selected = selectedMood === score;
 
         return (
           <Pressable
-            accessibilityLabel={`Set mood score ${mood} of 5`}
+            accessibilityLabel={`Set mood to ${label}, ${score} of 5`}
             accessibilityRole="button"
-            key={mood}
-            onPress={() => onSelectMood(mood)}
-            style={[styles.moodButton, selected && styles.moodButtonSelected]}
+            accessibilityState={{ selected }}
+            key={score}
+            onPress={() => onSelectMood(score)}
+            style={({ pressed }) => [
+              styles.moodButton,
+              rich && styles.moodButtonRich,
+              selected && styles.moodButtonSelected,
+              pressed && styles.moodButtonPressed,
+            ]}
           >
-            <Text style={[styles.moodButtonText, selected && styles.moodButtonTextSelected]}>{mood}</Text>
+            <Text style={styles.moodEmoji}>{emoji}</Text>
+            {rich ? (
+              <Text style={[styles.moodLabel, selected && styles.moodLabelSelected]}>{label}</Text>
+            ) : (
+              <Text style={[styles.moodButtonText, selected && styles.moodButtonTextSelected]}>{score}</Text>
+            )}
           </Pressable>
         );
       })}
@@ -169,22 +192,45 @@ const styles = StyleSheet.create({
   },
   moodOptions: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    justifyContent: 'space-between',
+    gap: spacing.xs,
   },
   moodButton: {
     alignItems: 'center',
     backgroundColor: colors.surfaceMuted,
     borderColor: colors.glassBorder,
-    borderRadius: radius.pill,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    height: 44,
+    flex: 1,
     justifyContent: 'center',
-    width: 44,
+    minHeight: 44,
+    paddingVertical: spacing.xs,
+  },
+  moodButtonRich: {
+    gap: 2,
+    minHeight: 58,
+    paddingHorizontal: spacing.xs,
   },
   moodButtonSelected: {
-    backgroundColor: colors.wellness,
+    backgroundColor: colors.wellnessSoft,
     borderColor: colors.wellness,
+    borderWidth: 1.5,
+  },
+  moodButtonPressed: {
+    opacity: 0.88,
+    transform: [{ scale: 0.98 }],
+  },
+  moodEmoji: {
+    fontSize: 18,
+    lineHeight: 22,
+  },
+  moodLabel: {
+    color: colors.textMuted,
+    fontSize: 9,
+    fontWeight: '800',
+    lineHeight: 12,
+  },
+  moodLabelSelected: {
+    color: colors.wellness,
   },
   moodButtonText: {
     color: colors.text,
@@ -192,7 +238,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   moodButtonTextSelected: {
-    color: colors.onAccent,
+    color: colors.wellness,
   },
   noteCard: {
     gap: spacing.xs,
