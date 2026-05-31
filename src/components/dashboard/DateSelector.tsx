@@ -29,6 +29,6 @@ export function DateSelector({ datePills, onSelectDate, selectedDate }: DateSele
 const styles = StyleSheet.create({
   dateSelector: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
 });

@@ -45,14 +45,15 @@ export function DashboardHero({
           </View>
           <ProgressBar accent={colors.primary} value={completionRate / 100} />
         </View>
-        {nextHabitName ? (
-          <View style={styles.heroHint}>
-            <Text style={styles.heroHintValue}>Next</Text>
-            <Text numberOfLines={1} style={styles.heroHintText}>
-              {nextHabitName}
-            </Text>
-          </View>
-        ) : null}
+        <View style={styles.heroHint}>
+          <Text style={styles.heroHintValue}>Next</Text>
+          <Text
+            numberOfLines={1}
+            style={[styles.heroHintText, !nextHabitName && styles.heroHintPlaceholder]}
+          >
+            {nextHabitName ?? 'All caught up'}
+          </Text>
+        </View>
       </View>
     </GlassSurface>
   );
@@ -149,5 +150,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
     lineHeight: 18,
+    minHeight: 18,
+  },
+  heroHintPlaceholder: {
+    color: colors.textMuted,
+    fontWeight: '600',
   },
 });

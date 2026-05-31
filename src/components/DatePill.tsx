@@ -2,7 +2,6 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { GlassSurface } from './GlassSurface';
 import { colors } from '../theme/colors';
-import { glass } from '../theme/glass';
 import { radius, spacing } from '../theme/spacing';
 
 type DatePillProps = {
@@ -21,13 +20,11 @@ export function DatePill({ active = false, label, onPress, value }: DatePillProp
       onPress={onPress}
       style={({ pressed }) => [styles.pressable, pressed && styles.pressed]}
     >
-      <GlassSurface borderRadius={radius.lg} noPadding overflowHidden style={styles.pill}>
+      <GlassSurface borderRadius={radius.md} noPadding overflowHidden style={styles.pill}>
         {active ? (
           <>
             <View style={styles.activeFill} />
-            <View style={styles.activeOutline} />
-            <View style={[styles.activeEdge, styles.activeEdgeLeft]} />
-            <View style={[styles.activeEdge, styles.activeEdgeRight]} />
+            <View style={styles.activeBorder} />
           </>
         ) : null}
         <View style={styles.inner}>
@@ -38,8 +35,6 @@ export function DatePill({ active = false, label, onPress, value }: DatePillProp
     </Pressable>
   );
 }
-
-const edgeWidth = glass.activeDateEdgeWidth;
 
 const styles = StyleSheet.create({
   pressable: {
@@ -55,19 +50,21 @@ const styles = StyleSheet.create({
   inner: {
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 56,
-    paddingVertical: spacing.sm,
+    minHeight: 44,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
   },
   label: {
     color: colors.textMuted,
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '800',
+    lineHeight: 13,
   },
   value: {
     color: colors.text,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '800',
-    lineHeight: 22,
+    lineHeight: 18,
   },
   labelActive: {
     color: colors.primary,
@@ -79,35 +76,11 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     backgroundColor: colors.primarySoft,
   },
-  activeOutline: {
+  activeBorder: {
     ...StyleSheet.absoluteFill,
     borderColor: colors.primary,
-    borderRadius: radius.lg,
-    borderWidth: 2,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-  },
-  activeEdge: {
-    backgroundColor: colors.primary,
-    bottom: 0,
-    position: 'absolute',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.85,
-    shadowRadius: 8,
-    top: 0,
-    width: edgeWidth,
-  },
-  activeEdgeLeft: {
-    borderBottomLeftRadius: radius.lg,
-    borderTopLeftRadius: radius.lg,
-    left: 0,
-  },
-  activeEdgeRight: {
-    borderBottomRightRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    right: 0,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    pointerEvents: 'none',
   },
 });
