@@ -93,6 +93,18 @@ export function DashboardScreen({
       showsVerticalScrollIndicator={false}
     >
       <AppHeader subcopy={headerSubcopy} />
+
+      <View style={styles.metricRow}>
+        <MetricCard
+          icon="radio-button-on"
+          label="Progress"
+          tone={colors.primary}
+          value={`${completedCount}/${dailyHabits.length}`}
+        />
+        <MetricCard icon="flash" label="Due" tone={colors.focus} value={`${dueCount}`} />
+        <MetricCard icon="alert-circle" label="Missed" tone={colors.warning} value={`${missedCount}`} />
+      </View>
+
       <DashboardHero
         completionRate={completionRate}
         dueCount={dueCount}
@@ -102,17 +114,6 @@ export function DashboardScreen({
       />
 
       <DateSelector datePills={datePills} onSelectDate={onSelectDate} selectedDate={selectedDate} />
-
-      <View style={styles.metricRow}>
-        <MetricCard
-          icon="radio-button-on"
-          label="Daily progress"
-          tone={colors.primary}
-          value={`${completedCount}/${dailyHabits.length}`}
-        />
-        <MetricCard icon="flash" label="Due now" tone={colors.focus} value={`${dueCount}`} />
-        <MetricCard icon="alert-circle" label="Missed" tone={colors.warning} value={`${missedCount}`} />
-      </View>
 
       <Panel>
         <SectionHeader title={scheduleTitle} meta="Grouped by when you usually do them" />

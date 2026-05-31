@@ -14,47 +14,57 @@ type MetricCardProps = {
 
 export function MetricCard({ icon, label, tone, value }: MetricCardProps) {
   return (
-    <GlassSurface borderRadius={radius.lg} style={styles.metricCard}>
-      <View style={styles.metricHeader}>
-        <View style={[styles.metricIcon, { backgroundColor: tone }]}>
-          <Ionicons color={colors.onAccent} name={icon} size={15} />
-        </View>
-        <Text style={styles.metricLabel}>{label}</Text>
+    <GlassSurface borderRadius={radius.lg} contentStyle={styles.metricCard} style={styles.metricShell}>
+      <View style={[styles.metricIcon, { backgroundColor: tone }]}>
+        <Ionicons color={colors.onAccent} name={icon} size={14} />
       </View>
-      <Text style={styles.metricValue}>{value}</Text>
+      <View style={styles.metricCopy}>
+        <Text numberOfLines={1} style={styles.metricValue}>
+          {value}
+        </Text>
+        <Text numberOfLines={1} style={styles.metricLabel}>
+          {label}
+        </Text>
+      </View>
     </GlassSurface>
   );
 }
 
 const styles = StyleSheet.create({
-  metricCard: {
+  metricShell: {
     flex: 1,
-    gap: spacing.sm,
-    minWidth: 104,
+    minWidth: 0,
   },
-  metricHeader: {
+  metricCard: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.sm,
+    paddingHorizontal: spacing.sm + 4,
+    paddingVertical: spacing.sm,
   },
   metricIcon: {
     alignItems: 'center',
     borderRadius: radius.pill,
-    height: 24,
+    flexShrink: 0,
+    height: 26,
     justifyContent: 'center',
-    width: 24,
+    width: 26,
+  },
+  metricCopy: {
+    flex: 1,
+    gap: 2,
+    minWidth: 0,
   },
   metricValue: {
     color: colors.text,
-    fontSize: 21,
+    fontSize: 18,
     fontWeight: '800',
-    lineHeight: 26,
+    lineHeight: 22,
   },
   metricLabel: {
     color: colors.textMuted,
-    flex: 1,
     fontSize: 11,
-    fontWeight: '800',
-    lineHeight: 16,
+    fontWeight: '700',
+    lineHeight: 14,
   },
 });
