@@ -10,6 +10,9 @@ import type { DailyHabitView, Habit, HabitStatus } from '../../types/routinely';
 type HabitCardProps = {
   habit: DailyHabitView | Habit;
   onToggle?: (habitId: string) => void;
+  onPressArchive?: (habitId: string) => void;
+  onPressDetail?: (habitId: string) => void;
+  onPressEdit?: (habitId: string) => void;
   showManagement?: boolean;
 };
 
@@ -85,7 +88,14 @@ function getStatusLabel(status: HabitStatus): string {
   }
 }
 
-export function HabitCard({ habit, onToggle, showManagement = false }: HabitCardProps) {
+export function HabitCard({
+  habit,
+  onToggle,
+  onPressArchive,
+  onPressDetail,
+  onPressEdit,
+  showManagement = false,
+}: HabitCardProps) {
   const dailyHabit = isDailyHabitView(habit);
   const completed = dailyHabit ? habit.status === 'completed' : false;
   const progress = dailyHabit ? habit.progress : 0;
@@ -159,9 +169,24 @@ export function HabitCard({ habit, onToggle, showManagement = false }: HabitCard
           )}
           {showManagement ? (
             <View style={styles.managementRow}>
-              <Text style={styles.managementAction}>Detail</Text>
-              <Text style={styles.managementAction}>Edit</Text>
-              <Text style={styles.managementDanger}>Archive</Text>
+              <Pressable
+                onPress={() => onPressDetail?.(habit.id)}
+                style={({ pressed }) => [styles.managementActionWrap, pressed && styles.managementPressed]}
+              >
+                <Text style={styles.managementAction}>Detail</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => onPressEdit?.(habit.id)}
+                style={({ pressed }) => [styles.managementActionWrap, pressed && styles.managementPressed]}
+              >
+                <Text style={styles.managementAction}>Edit</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => onPressArchive?.(habit.id)}
+                style={({ pressed }) => [styles.managementActionWrap, pressed && styles.managementPressed]}
+              >
+                <Text style={styles.managementDanger}>Archive</Text>
+              </Pressable>
             </View>
           ) : null}
         </View>
@@ -380,6 +405,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.md,
     paddingTop: spacing.sm,
+  },
+  managementActionWrap: {
+    paddingVertical: 2,
+  },
+  managementPressed: {
+    opacity: 0.72,
   },
   managementAction: {
     color: colors.primary,
