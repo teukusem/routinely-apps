@@ -237,7 +237,7 @@ export function AppNavigator() {
   }
 
   return (
-    <Screen padded={false}>
+    <Screen padded={false} safeAreaEdges={['top', 'left', 'right']}>
       <View style={styles.content}>
         {renderScreen({
           activeTab,

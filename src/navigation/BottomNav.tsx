@@ -33,7 +33,7 @@ export function BottomNav({ activeTab, onChangeTab }: BottomNavProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.bottomNavWrap, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
+    <View style={[styles.bottomNavWrap, { paddingBottom: insets.bottom + spacing.xs }]}>
       <GlassSurface
         borderRadius={radius.pill}
         contentStyle={styles.bottomNavRow}
@@ -78,9 +78,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     paddingHorizontal: spacing.sm,
-    paddingTop: spacing.xs,
     position: 'absolute',
     right: 0,
+    zIndex: 10,
   },
   bottomNavShell: {
     alignSelf: 'center',

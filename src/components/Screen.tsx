@@ -1,19 +1,20 @@
 import { PropsWithChildren } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
 import { AuroraBackground } from './AuroraBackground';
 import { spacing } from '../theme/spacing';
 
 type ScreenProps = PropsWithChildren<{
   padded?: boolean;
+  safeAreaEdges?: Edge[];
 }>;
 
-export function Screen({ children, padded = true }: ScreenProps) {
+export function Screen({ children, padded = true, safeAreaEdges }: ScreenProps) {
   return (
     <View style={styles.root}>
       <AuroraBackground />
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView edges={safeAreaEdges} style={styles.safeArea}>
         <View style={[styles.content, padded && styles.padded]}>{children}</View>
       </SafeAreaView>
     </View>
