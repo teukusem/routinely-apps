@@ -167,33 +167,44 @@ export { getNoteLinkStyle };
 export function AnalyticsBars({
   bars,
   fillColor = colors.primary,
+  highlightBestBar = false,
   subtitle,
   title,
 }: {
   bars: AnalyticsBar[];
   fillColor?: string;
+  highlightBestBar?: boolean;
   subtitle: string;
   title: string;
 }) {
   const fillHeights = mapBarsToFillPercentages(bars);
+  const bestValue = highlightBestBar ? Math.max(...bars.map((bar) => bar.value)) : -1;
 
   return (
     <Panel>
       <SectionHeader title={title} meta={subtitle} compact />
       <View style={styles.barChart}>
-        {bars.map((bar, index) => (
-          <View key={bar.label} style={styles.barColumn}>
-            <View style={styles.barTrack}>
-              <View
-                style={[
-                  styles.barFill,
-                  { backgroundColor: fillColor, height: fillHeights[index] as DimensionValue },
-                ]}
-              />
+        {bars.map((bar, index) => {
+          const isBest = highlightBestBar && bar.value === bestValue;
+
+          return (
+            <View key={bar.label} style={styles.barColumn}>
+              <View style={[styles.barTrack, isBest && styles.barTrackBest]}>
+                <View
+                  style={[
+                    styles.barFill,
+                    {
+                      backgroundColor: fillColor,
+                      height: fillHeights[index] as DimensionValue,
+                      opacity: isBest ? 1 : 0.72,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={[styles.barLabel, isBest && styles.barLabelBest]}>{bar.label}</Text>
             </View>
-            <Text style={styles.barLabel}>{bar.label}</Text>
-          </View>
-        ))}
+          );
+        })}
       </View>
     </Panel>
   );
@@ -420,6 +431,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     width: '100%',
   },
+  barTrackBest: {
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primary,
+    borderWidth: 1,
+  },
   barFill: {
     backgroundColor: colors.primary,
     borderRadius: radius.lg,
@@ -429,5 +445,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 11,
     fontWeight: '800',
+  },
+  barLabelBest: {
+    color: colors.primary,
   },
 });
