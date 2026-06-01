@@ -35,6 +35,7 @@ type DashboardScreenProps = {
   notes: NotePreview[];
   onSelectDate: (localDate: LocalDate) => void;
   onSelectMood: (mood: number) => void;
+  onOpenProfile: () => void;
   onToggleHabit: (habitId: string) => void;
   scheduleTitle: string;
   selectedDate: LocalDate;
@@ -52,6 +53,7 @@ export function DashboardScreen({
   notes,
   onSelectDate,
   onSelectMood,
+  onOpenProfile,
   onToggleHabit,
   scheduleTitle,
   selectedDate,
@@ -72,7 +74,7 @@ export function DashboardScreen({
         contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide]}
         showsVerticalScrollIndicator={false}
       >
-        <AppHeader subcopy={headerSubcopy} />
+        <AppHeader onPressProfile={onOpenProfile} subcopy={headerSubcopy} />
         <DateSelector datePills={datePills} onSelectDate={onSelectDate} selectedDate={selectedDate} />
         <Panel>
           <SectionHeader
@@ -94,7 +96,7 @@ export function DashboardScreen({
       contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide, styles.screenSections]}
       showsVerticalScrollIndicator={false}
     >
-      <AppHeader subcopy={headerSubcopy} />
+      <AppHeader onPressProfile={onOpenProfile} subcopy={headerSubcopy} />
 
       <View style={styles.metricRow}>
         <MetricCard

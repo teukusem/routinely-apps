@@ -13,10 +13,11 @@ import type { NotePreview } from '../types/routinely';
 type NotesScreenProps = {
   notes: NotePreview[];
   onCreateNote: (draft: { title: string; body: string }) => void;
+  onOpenProfile: () => void;
   onOverlayOpenChange?: (isOpen: boolean) => void;
 };
 
-export function NotesScreen({ notes, onCreateNote, onOverlayOpenChange }: NotesScreenProps) {
+export function NotesScreen({ notes, onCreateNote, onOpenProfile, onOverlayOpenChange }: NotesScreenProps) {
   const [query, setQuery] = useState('');
   const [newTitle, setNewTitle] = useState('');
   const [newBody, setNewBody] = useState('');
@@ -91,7 +92,7 @@ export function NotesScreen({ notes, onCreateNote, onOverlayOpenChange }: NotesS
   return (
     <>
       <ScrollView contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide]} showsVerticalScrollIndicator={false}>
-        <AppHeader subcopy="Reflections" />
+        <AppHeader onPressProfile={onOpenProfile} subcopy="Reflections" />
         <GlassSurface borderRadius={radius.xl}>
           <View style={styles.hero}>
             <View style={styles.heroCopy}>

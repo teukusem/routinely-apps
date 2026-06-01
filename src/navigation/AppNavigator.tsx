@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AppState, StyleSheet, View } from 'react-native';
+import { Alert, AppState, StyleSheet, View } from 'react-native';
 
 import { Screen } from '../components/Screen';
 import {
@@ -25,6 +25,7 @@ import { DashboardScreen } from '../screens/DashboardScreen';
 import { HabitsScreen } from '../screens/HabitsScreen';
 import { MoodScreen } from '../screens/MoodScreen';
 import { NotesScreen } from '../screens/NotesScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 import { colors } from '../theme/colors';
 import { BottomNav } from './BottomNav';
 import { formatLocalDateLabel, toLocalDate } from '../utils/local-date';
@@ -38,6 +39,7 @@ type DateViewState = {
 export function AppNavigator() {
   const [activeTab, setActiveTab] = useState<AppTab>('Dashboard');
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [habits, setHabits] = useState(initialHabits);
   const [notes, setNotes] = useState<NotePreview[]>(initialNotes);
   const [dateView, setDateView] = useState<DateViewState>(() => {
@@ -236,33 +238,53 @@ export function AppNavigator() {
     setNotes((currentNotes) => [newNote, ...currentNotes]);
   }
 
+  const handleOpenProfile = useCallback(() => {
+    setIsSettingsOpen(true);
+    setIsOverlayOpen(true);
+  }, []);
+
+  const handleCloseSettings = useCallback(() => {
+    setIsSettingsOpen(false);
+    setIsOverlayOpen(false);
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    handleCloseSettings();
+    Alert.alert('Logged out', 'Sign-in will be available when account sync is connected.');
+  }, [handleCloseSettings]);
+
   return (
     <Screen padded={false} safeAreaEdges={['top', 'left', 'right']}>
       <View style={styles.content}>
-        {renderScreen({
-          activeTab,
-          analytics: analyticsSummary,
-          completionRate: completionRate(dailyHabits),
-          dailyHabits,
-          datePills,
-          habits,
-          headerSubcopy,
-          moodDetail,
-          nextHabitName: nextHabit?.name,
-          notes,
-          onSelectDate: handleSelectDate,
-          onSelectMood: handleSelectMood,
-          onToggleHabit: handleToggleHabit,
-          onCreateHabit: handleCreateHabit,
-          onArchiveHabit: handleArchiveHabit,
-          onEditHabit: handleEditHabit,
-          onCreateNote: handleCreateNote,
-          onOverlayOpenChange: setIsOverlayOpen,
-          scheduleTitle,
-          selectedDate,
-          selectedDateLabel,
-          selectedMood,
-        })}
+        {isSettingsOpen ? (
+          <SettingsScreen onClose={handleCloseSettings} onLogout={handleLogout} />
+        ) : (
+          renderScreen({
+            activeTab,
+            analytics: analyticsSummary,
+            completionRate: completionRate(dailyHabits),
+            dailyHabits,
+            datePills,
+            habits,
+            headerSubcopy,
+            moodDetail,
+            nextHabitName: nextHabit?.name,
+            notes,
+            onOpenProfile: handleOpenProfile,
+            onSelectDate: handleSelectDate,
+            onSelectMood: handleSelectMood,
+            onToggleHabit: handleToggleHabit,
+            onCreateHabit: handleCreateHabit,
+            onArchiveHabit: handleArchiveHabit,
+            onEditHabit: handleEditHabit,
+            onCreateNote: handleCreateNote,
+            onOverlayOpenChange: setIsOverlayOpen,
+            scheduleTitle,
+            selectedDate,
+            selectedDateLabel,
+            selectedMood,
+          })
+        )}
       </View>
       {!isOverlayOpen ? <BottomNav activeTab={activeTab} onChangeTab={setActiveTab} /> : null}
     </Screen>
@@ -287,6 +309,7 @@ type RenderScreenArgs = {
   onArchiveHabit: (habitId: string) => void;
   onEditHabit: (draft: { habitId: string; name: string; category: string; timePeriod: TimePeriod }) => void;
   onCreateNote: (draft: { title: string; body: string }) => void;
+  onOpenProfile: () => void;
   onOverlayOpenChange: (isOpen: boolean) => void;
   scheduleTitle: string;
   selectedDate: LocalDate;
@@ -312,6 +335,7 @@ function renderScreen({
   onArchiveHabit,
   onEditHabit,
   onCreateNote,
+  onOpenProfile,
   onOverlayOpenChange,
   scheduleTitle,
   selectedDate,
@@ -331,6 +355,7 @@ function renderScreen({
           notes={noteItems}
           onSelectDate={onSelectDate}
           onSelectMood={onSelectMood}
+          onOpenProfile={onOpenProfile}
           onToggleHabit={onToggleHabit}
           scheduleTitle={scheduleTitle}
           selectedDate={selectedDate}
@@ -346,6 +371,7 @@ function renderScreen({
           onCreateHabit={onCreateHabit}
           onOverlayOpenChange={onOverlayOpenChange}
           onEditHabit={onEditHabit}
+          onOpenProfile={onOpenProfile}
         />
       );
     case 'Mood':
@@ -353,15 +379,23 @@ function renderScreen({
         <MoodScreen
           moodDetail={moodDetail}
           moodTrendBars={analytics.bars}
+          onOpenProfile={onOpenProfile}
           onSelectMood={onSelectMood}
           selectedDateLabel={selectedDateLabel}
           selectedMood={selectedMood}
         />
       );
     case 'Notes':
-      return <NotesScreen notes={noteItems} onCreateNote={onCreateNote} onOverlayOpenChange={onOverlayOpenChange} />;
+      return (
+        <NotesScreen
+          notes={noteItems}
+          onCreateNote={onCreateNote}
+          onOpenProfile={onOpenProfile}
+          onOverlayOpenChange={onOverlayOpenChange}
+        />
+      );
     case 'Analytics':
-      return <AnalyticsScreen analytics={analytics} />;
+      return <AnalyticsScreen analytics={analytics} onOpenProfile={onOpenProfile} />;
   }
 }
 

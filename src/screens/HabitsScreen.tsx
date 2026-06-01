@@ -18,6 +18,7 @@ type HabitsScreenProps = {
   onCreateHabit: (draft: { name: string; category: string; timePeriod: TimePeriod }) => void;
   onArchiveHabit: (habitId: string) => void;
   onEditHabit: (draft: { habitId: string; name: string; category: string; timePeriod: TimePeriod }) => void;
+  onOpenProfile: () => void;
   onOverlayOpenChange?: (isOpen: boolean) => void;
 };
 
@@ -33,8 +34,9 @@ export function HabitsScreen({
   dailyHabits,
   onArchiveHabit,
   onCreateHabit,
-  onOverlayOpenChange,
   onEditHabit,
+  onOpenProfile,
+  onOverlayOpenChange,
 }: HabitsScreenProps) {
   const [activeFilter, setActiveFilter] = useState<HabitFilter>('Active');
   const [sheetMode, setSheetMode] = useState<SheetMode>('create');
@@ -161,7 +163,7 @@ export function HabitsScreen({
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide]} showsVerticalScrollIndicator={false}>
-        <AppHeader subcopy="Manage routines" />
+        <AppHeader onPressProfile={onOpenProfile} subcopy="Manage routines" />
         <GlassSurface borderRadius={radius.xl}>
           <View style={styles.hero}>
             <View style={styles.heroCopy}>

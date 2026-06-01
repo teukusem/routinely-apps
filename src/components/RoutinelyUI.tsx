@@ -20,10 +20,12 @@ export { ProgressBar } from './shared/ProgressBar';
 export { SectionHeader } from './shared/SectionHeader';
 
 type AppHeaderProps = {
+  onPressProfile?: () => void;
+  profileInitials?: string;
   subcopy?: string;
 };
 
-export function AppHeader({ subcopy = 'Daily plan' }: AppHeaderProps) {
+export function AppHeader({ onPressProfile, profileInitials = 'T', subcopy = 'Daily plan' }: AppHeaderProps) {
   return (
     <View style={styles.appHeader}>
       <View>
@@ -31,11 +33,17 @@ export function AppHeader({ subcopy = 'Daily plan' }: AppHeaderProps) {
         <Text style={styles.headerSubcopy}>{subcopy}</Text>
       </View>
       <Pressable
-        accessibilityLabel="Open profile menu"
+        accessibilityLabel="Open profile settings"
         accessibilityRole="button"
-        style={[styles.avatarButton, styles.innerSurface]}
+        disabled={!onPressProfile}
+        onPress={onPressProfile}
+        style={({ pressed }) => [
+          styles.avatarButton,
+          styles.innerSurface,
+          onPressProfile && pressed && styles.avatarButtonPressed,
+        ]}
       >
-        <Text style={styles.avatarText}>T</Text>
+        <Text style={styles.avatarText}>{profileInitials}</Text>
       </Pressable>
     </View>
   );
@@ -265,6 +273,10 @@ const styles = StyleSheet.create({
     height: 44,
     justifyContent: 'center',
     width: 44,
+  },
+  avatarButtonPressed: {
+    opacity: 0.86,
+    transform: [{ scale: 0.96 }],
   },
   avatarText: {
     color: colors.text,

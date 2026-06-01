@@ -10,9 +10,10 @@ import type { AnalyticsSummary } from '../types/routinely';
 
 type AnalyticsScreenProps = {
   analytics: AnalyticsSummary;
+  onOpenProfile: () => void;
 };
 
-export function AnalyticsScreen({ analytics }: AnalyticsScreenProps) {
+export function AnalyticsScreen({ analytics, onOpenProfile }: AnalyticsScreenProps) {
   const bestBar = analytics.bars.reduce(
     (best, bar) => (bar.value > best.value ? bar : best),
     analytics.bars[0],
@@ -28,7 +29,7 @@ export function AnalyticsScreen({ analytics }: AnalyticsScreenProps) {
       contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide, styles.screenSections]}
       showsVerticalScrollIndicator={false}
     >
-      <AppHeader subcopy="Weekly insights" />
+      <AppHeader onPressProfile={onOpenProfile} subcopy="Weekly insights" />
       <GlassSurface borderRadius={radius.xl}>
         <View style={styles.hero}>
           <View style={styles.heroCopy}>

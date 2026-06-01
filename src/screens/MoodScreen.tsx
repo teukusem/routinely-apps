@@ -13,6 +13,7 @@ type MoodScreenProps = {
   moodTrendBars: AnalyticsBar[];
   selectedDateLabel: string;
   selectedMood: number;
+  onOpenProfile: () => void;
   onSelectMood: (mood: number) => void;
 };
 
@@ -21,6 +22,7 @@ export function MoodScreen({
   moodTrendBars,
   selectedDateLabel,
   selectedMood,
+  onOpenProfile,
   onSelectMood,
 }: MoodScreenProps) {
   const moodLogged = selectedMood > 0;
@@ -30,7 +32,7 @@ export function MoodScreen({
 
   return (
     <ScrollView contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide]} showsVerticalScrollIndicator={false}>
-      <AppHeader subcopy="Mood tracking" />
+      <AppHeader onPressProfile={onOpenProfile} subcopy="Mood tracking" />
       <GlassSurface borderRadius={radius.xl}>
         <View style={styles.hero}>
           <View style={styles.heroCopy}>
