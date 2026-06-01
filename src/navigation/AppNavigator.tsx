@@ -18,7 +18,7 @@ import {
   buildInitialMoodLogs,
   getMoodDetailView,
   initialHabits,
-  notes,
+  notes as initialNotes,
 } from '../data/routinely';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
@@ -28,7 +28,7 @@ import { NotesScreen } from '../screens/NotesScreen';
 import { colors } from '../theme/colors';
 import { BottomNav } from './BottomNav';
 import { formatLocalDateLabel, toLocalDate } from '../utils/local-date';
-import type { AppTab, DatePillOption, Habit, HabitLog, LocalDate, MoodLog, TimePeriod } from '../types/routinely';
+import type { AppTab, DatePillOption, Habit, HabitLog, LocalDate, MoodLog, NotePreview, TimePeriod } from '../types/routinely';
 
 type DateViewState = {
   currentLocalDate: LocalDate;
@@ -37,8 +37,9 @@ type DateViewState = {
 
 export function AppNavigator() {
   const [activeTab, setActiveTab] = useState<AppTab>('Dashboard');
-  const [isHabitCreateSheetOpen, setIsHabitCreateSheetOpen] = useState(false);
+  const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const [habits, setHabits] = useState(initialHabits);
+  const [notes, setNotes] = useState<NotePreview[]>(initialNotes);
   const [dateView, setDateView] = useState<DateViewState>(() => {
     const localDate = toLocalDate(new Date());
     return {
@@ -223,6 +224,18 @@ export function AppNavigator() {
     );
   }
 
+  function handleCreateNote({ body, title }: { title: string; body: string }) {
+    const timestamp = Date.now();
+    const newNote: NotePreview = {
+      id: `note-${timestamp}`,
+      title: title.trim(),
+      body: body.trim(),
+      linkedTo: 'Manual note',
+    };
+
+    setNotes((currentNotes) => [newNote, ...currentNotes]);
+  }
+
   return (
     <Screen padded={false}>
       <View style={styles.content}>
@@ -243,14 +256,15 @@ export function AppNavigator() {
           onCreateHabit: handleCreateHabit,
           onArchiveHabit: handleArchiveHabit,
           onEditHabit: handleEditHabit,
-          onOverlayOpenChange: setIsHabitCreateSheetOpen,
+          onCreateNote: handleCreateNote,
+          onOverlayOpenChange: setIsOverlayOpen,
           scheduleTitle,
           selectedDate,
           selectedDateLabel,
           selectedMood,
         })}
       </View>
-      {!isHabitCreateSheetOpen ? <BottomNav activeTab={activeTab} onChangeTab={setActiveTab} /> : null}
+      {!isOverlayOpen ? <BottomNav activeTab={activeTab} onChangeTab={setActiveTab} /> : null}
     </Screen>
   );
 }
@@ -265,13 +279,14 @@ type RenderScreenArgs = {
   headerSubcopy: string;
   moodDetail: ReturnType<typeof getMoodDetailView>;
   nextHabitName?: string;
-  notes: typeof notes;
+  notes: NotePreview[];
   onSelectDate: (localDate: LocalDate) => void;
   onSelectMood: (mood: number) => void;
   onToggleHabit: (habitId: string) => void;
   onCreateHabit: (draft: { name: string; category: string; timePeriod: TimePeriod }) => void;
   onArchiveHabit: (habitId: string) => void;
   onEditHabit: (draft: { habitId: string; name: string; category: string; timePeriod: TimePeriod }) => void;
+  onCreateNote: (draft: { title: string; body: string }) => void;
   onOverlayOpenChange: (isOpen: boolean) => void;
   scheduleTitle: string;
   selectedDate: LocalDate;
@@ -296,6 +311,7 @@ function renderScreen({
   onCreateHabit,
   onArchiveHabit,
   onEditHabit,
+  onCreateNote,
   onOverlayOpenChange,
   scheduleTitle,
   selectedDate,
@@ -343,7 +359,7 @@ function renderScreen({
         />
       );
     case 'Notes':
-      return <NotesScreen notes={noteItems} />;
+      return <NotesScreen notes={noteItems} onCreateNote={onCreateNote} onOverlayOpenChange={onOverlayOpenChange} />;
     case 'Analytics':
       return <AnalyticsScreen analytics={analytics} />;
   }

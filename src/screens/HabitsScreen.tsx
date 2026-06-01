@@ -10,7 +10,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 
 import { GlassSurface } from '../components/GlassSurface';
 import { HabitCard } from '../components/habits/HabitCard';
-import { AppHeader, sharedStyles } from '../components/RoutinelyUI';
+import { AppHeader, EmptyState, sharedStyles } from '../components/RoutinelyUI';
 import { Panel } from '../components/shared/Panel';
 import { SectionHeader } from '../components/shared/SectionHeader';
 import { colors } from '../theme/colors';
@@ -229,7 +229,13 @@ export function HabitsScreen({
               showManagement
             />
           ))}
-          {filteredHabits.length === 0 ? <Text style={styles.emptyText}>No habits in this filter yet.</Text> : null}
+          {filteredHabits.length === 0 ? (
+            <EmptyState
+              description="Create one to start tracking this filter."
+              icon="repeat-outline"
+              title="No habits found"
+            />
+          ) : null}
         </Panel>
       </ScrollView>
 
@@ -488,12 +494,6 @@ const styles = StyleSheet.create({
     color: colors.onAccent,
     fontSize: 11,
     fontWeight: '800',
-  },
-  emptyText: {
-    color: colors.textMuted,
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: spacing.sm,
   },
   sheetBackground: {
     backgroundColor: '#FFFFFF',

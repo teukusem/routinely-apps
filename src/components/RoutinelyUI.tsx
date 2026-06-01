@@ -12,6 +12,7 @@ import { radius, spacing } from '../theme/spacing';
 import type { AnalyticsBar, NotePreview } from '../types/routinely';
 
 export { DashboardHero } from './dashboard/DashboardHero';
+export { EmptyState } from './shared/EmptyState';
 export { HabitCard } from './habits/HabitCard';
 export { MetricCard } from './shared/MetricCard';
 export { Panel } from './shared/Panel';
