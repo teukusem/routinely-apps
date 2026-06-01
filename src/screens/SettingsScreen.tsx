@@ -1,4 +1,7 @@
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
 import { GlassSurface } from '../components/GlassSurface';
 import { Icon, IconBadge } from '../components/shared/Icon';
@@ -47,8 +50,18 @@ export function SettingsScreen({
   profileInitials = 'T',
   profileName = 'Teuku',
 }: SettingsScreenProps) {
-  function handleRowPress(label: string) {
-    Alert.alert(label, 'This setting will be available in a future update.');
+  const [activeSection, setActiveSection] = useState<'main' | 'edit-profile' | 'email' | 'reset-password'>('main');
+  const [editName, setEditName] = useState(profileName);
+  const [editEmail, setEditEmail] = useState(profileEmail);
+
+  function handleRowPress(id: string, label: string) {
+    if (id === 'edit-profile') {
+      setActiveSection('edit-profile');
+    } else if (id === 'email') {
+      setActiveSection('email');
+    } else {
+      Alert.alert(label, 'This setting will be available in a future update.');
+    }
   }
 
   function confirmLogout() {
@@ -58,24 +71,260 @@ export function SettingsScreen({
     ]);
   }
 
-  return (
-    <ScrollView
-      contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide, styles.screenSections]}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.topBar}>
-        <Pressable
-          accessibilityLabel="Close settings"
-          accessibilityRole="button"
-          hitSlop={8}
-          onPress={onClose}
-          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
+  if (activeSection === 'edit-profile') {
+    return (
+      <View style={styles.container}>
+        <LinearGradient colors={['rgba(0,0,0,0.95)', 'rgba(0,0,0,0.6)', 'transparent']} style={styles.topBarContainer} pointerEvents="box-none">
+          <View style={[styles.topBar, sharedStyles.centeredWide]}>
+            <Pressable
+            accessibilityLabel="Back to settings"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => setActiveSection('main')}
+            style={({ pressed }) => [pressed && styles.backButtonPressed]}
+          >
+            <BlurView intensity={60} tint="default" style={styles.backButton}>
+              <Icon accent="lavender" name="arrow-back-circle-outline" size={20} />
+            </BlurView>
+          </Pressable>
+            <Text style={styles.topBarTitle}>Edit Profile</Text>
+            <View style={styles.topBarSpacer} />
+          </View>
+        </LinearGradient>
+        <ScrollView
+          contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide, styles.screenSections, { paddingTop: 120 }]}
+          showsVerticalScrollIndicator={false}
         >
-          <Icon accent="lavender" name="arrow-back-circle-outline" size={20} />
+
+        <Panel>
+          <View style={styles.panelStack}>
+            <SectionHeader compact meta="Your public profile information" title="Profile Details" />
+            
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Name</Text>
+              <TextInput 
+                style={styles.textInput} 
+                value={editName} 
+                onChangeText={setEditName} 
+                placeholder="Your Name" 
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Timezone</Text>
+              <TextInput 
+                value="Asia/Jakarta" 
+                editable={false}
+                style={[styles.textInput, styles.textInputDisabled]} 
+              />
+            </View>
+          </View>
+        </Panel>
+        
+        <Pressable
+          style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryButtonPressed]}
+          onPress={() => {
+            Alert.alert('Success', 'Profile updated successfully.');
+            setActiveSection('main');
+          }}
+        >
+          <Text style={styles.primaryButtonText}>Save Changes</Text>
         </Pressable>
-        <Text style={styles.topBarTitle}>Settings</Text>
-        <View style={styles.topBarSpacer} />
+        </ScrollView>
       </View>
+    );
+  }
+
+  if (activeSection === 'email') {
+    return (
+      <View style={styles.container}>
+        <LinearGradient colors={['rgba(0,0,0,0.95)', 'rgba(0,0,0,0.6)', 'transparent']} style={styles.topBarContainer} pointerEvents="box-none">
+          <View style={[styles.topBar, sharedStyles.centeredWide]}>
+            <Pressable
+            accessibilityLabel="Back to settings"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => setActiveSection('main')}
+            style={({ pressed }) => [pressed && styles.backButtonPressed]}
+          >
+            <BlurView intensity={60} tint="default" style={styles.backButton}>
+              <Icon accent="lavender" name="arrow-back-circle-outline" size={20} />
+            </BlurView>
+          </Pressable>
+            <Text style={styles.topBarTitle}>Email & Account</Text>
+            <View style={styles.topBarSpacer} />
+          </View>
+        </LinearGradient>
+        <ScrollView
+          contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide, styles.screenSections, { paddingTop: 120 }]}
+          showsVerticalScrollIndicator={false}
+        >
+
+        <Panel>
+          <View style={styles.panelStack}>
+            <SectionHeader compact meta="Manage your sign-in details" title="Account Credentials" />
+            
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Email Address</Text>
+              <TextInput 
+                style={styles.textInput} 
+                value={editEmail} 
+                onChangeText={setEditEmail} 
+                placeholder="your@email.com" 
+                placeholderTextColor={colors.textMuted}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Password</Text>
+              <TextInput 
+                style={styles.textInput} 
+                value="********" 
+                editable={false}
+                secureTextEntry
+              />
+            </View>
+          </View>
+        </Panel>
+
+        <Pressable
+          style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryButtonPressed]}
+          onPress={() => {
+            Alert.alert('Success', 'Email updated successfully.');
+            setActiveSection('main');
+          }}
+        >
+          <Text style={styles.primaryButtonText}>Update Email</Text>
+        </Pressable>
+        
+        <Pressable
+          style={({ pressed }) => [styles.logoutButton, pressed && styles.logoutButtonPressed]}
+          onPress={() => {
+            setActiveSection('reset-password');
+          }}
+        >
+          <Text style={styles.logoutText}>Reset Password</Text>
+        </Pressable>
+
+        <View style={{ marginTop: spacing.xl }}>
+           <Pressable
+             style={({ pressed }) => [styles.logoutButton, pressed && styles.logoutButtonPressed, { borderColor: colors.danger, borderWidth: 1, backgroundColor: 'transparent' }]}
+             onPress={() => {
+                Alert.alert('Delete Account', 'Are you sure? This cannot be undone.', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Delete', style: 'destructive', onPress: onLogout }
+                ]);
+             }}
+           >
+             <Text style={styles.logoutText}>Delete Account</Text>
+           </Pressable>
+        </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  if (activeSection === 'reset-password') {
+    return (
+      <View style={styles.container}>
+        <LinearGradient colors={['rgba(0,0,0,0.95)', 'rgba(0,0,0,0.6)', 'transparent']} style={styles.topBarContainer} pointerEvents="box-none">
+          <View style={[styles.topBar, sharedStyles.centeredWide]}>
+            <Pressable
+            accessibilityLabel="Back to Email & Account"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => setActiveSection('email')}
+            style={({ pressed }) => [pressed && styles.backButtonPressed]}
+          >
+            <BlurView intensity={60} tint="default" style={styles.backButton}>
+              <Icon accent="lavender" name="arrow-back-circle-outline" size={20} />
+            </BlurView>
+          </Pressable>
+            <Text style={styles.topBarTitle}>Reset Password</Text>
+            <View style={styles.topBarSpacer} />
+          </View>
+        </LinearGradient>
+        <ScrollView
+          contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide, styles.screenSections, { paddingTop: 120 }]}
+          showsVerticalScrollIndicator={false}
+        >
+
+        <Panel>
+          <View style={styles.panelStack}>
+            <SectionHeader compact meta="Choose a strong new password" title="Update Password" />
+            
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Current Password</Text>
+              <TextInput 
+                style={styles.textInput} 
+                placeholder="Enter current password" 
+                placeholderTextColor={colors.textMuted}
+                secureTextEntry
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>New Password</Text>
+              <TextInput 
+                style={styles.textInput} 
+                placeholder="Enter new password" 
+                placeholderTextColor={colors.textMuted}
+                secureTextEntry
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Confirm New Password</Text>
+              <TextInput 
+                style={styles.textInput} 
+                placeholder="Confirm new password" 
+                placeholderTextColor={colors.textMuted}
+                secureTextEntry
+              />
+            </View>
+          </View>
+        </Panel>
+
+        <Pressable
+          style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryButtonPressed]}
+          onPress={() => {
+            Alert.alert('Success', 'Your password has been successfully reset.');
+            setActiveSection('email');
+          }}
+        >
+          <Text style={styles.primaryButtonText}>Change Password</Text>
+        </Pressable>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <LinearGradient colors={['rgba(0,0,0,0.95)', 'rgba(0,0,0,0.6)', 'transparent']} style={styles.topBarContainer} pointerEvents="box-none">
+        <View style={[styles.topBar, sharedStyles.centeredWide]}>
+          <Pressable
+            accessibilityLabel="Close settings"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={onClose}
+            style={({ pressed }) => [pressed && styles.backButtonPressed]}
+          >
+            <BlurView intensity={60} tint="default" style={styles.backButton}>
+              <Icon accent="lavender" name="arrow-back-circle-outline" size={20} />
+            </BlurView>
+          </Pressable>
+          <Text style={styles.topBarTitle}>Settings</Text>
+          <View style={styles.topBarSpacer} />
+        </View>
+      </LinearGradient>
+      <ScrollView
+        contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide, styles.screenSections, { paddingTop: 120 }]}
+        showsVerticalScrollIndicator={false}
+      >
 
       <GlassSurface borderRadius={radius.xl}>
         <View style={styles.profileHero}>
@@ -97,7 +346,7 @@ export function SettingsScreen({
           <SectionHeader compact meta="Profile details" title="Account" />
           <View style={styles.rowList}>
             {profileRows.map((row) => (
-              <SettingsRow key={row.id} onPress={() => handleRowPress(row.label)} row={row} />
+              <SettingsRow key={row.id} onPress={() => handleRowPress(row.id, row.label)} row={row} />
             ))}
           </View>
         </View>
@@ -108,7 +357,7 @@ export function SettingsScreen({
           <SectionHeader compact meta="Reminders, privacy, sync" title="Configuration" />
           <View style={styles.rowList}>
             {preferenceRows.map((row) => (
-              <SettingsRow key={row.id} onPress={() => handleRowPress(row.label)} row={row} />
+              <SettingsRow key={row.id} onPress={() => handleRowPress(row.id, row.label)} row={row} />
             ))}
           </View>
         </View>
@@ -119,7 +368,7 @@ export function SettingsScreen({
           <SectionHeader compact meta="Help and app info" title="Support" />
           <View style={styles.rowList}>
             {supportRows.map((row) => (
-              <SettingsRow key={row.id} onPress={() => handleRowPress(row.label)} row={row} />
+              <SettingsRow key={row.id} onPress={() => handleRowPress(row.id, row.label)} row={row} />
             ))}
           </View>
         </View>
@@ -134,7 +383,8 @@ export function SettingsScreen({
         <Icon accent="coral" name="exit-outline" size="lg" />
         <Text style={styles.logoutText}>Log out</Text>
       </Pressable>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -164,6 +414,19 @@ function SettingsRow({ onPress, row }: { onPress: () => void; row: SettingsRowCo
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  topBarContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xl,
+  },
   screenSections: {
     gap: spacing.lg,
   },
@@ -174,13 +437,13 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignItems: 'center',
-    backgroundColor: colors.surfaceMuted,
     borderColor: colors.glassBorder,
     borderRadius: radius.pill,
     borderWidth: 1,
     height: 44,
     justifyContent: 'center',
     width: 44,
+    overflow: 'hidden',
   },
   backButtonPressed: {
     opacity: 0.86,
@@ -299,6 +562,45 @@ const styles = StyleSheet.create({
   logoutText: {
     color: colors.danger,
     fontSize: 14,
+    fontWeight: '800',
+  },
+  inputGroup: {
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  inputLabel: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  textInput: {
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.glassBorder,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    color: colors.text,
+    fontSize: 15,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 4,
+  },
+  textInputDisabled: {
+    opacity: 0.6,
+  },
+  primaryButton: {
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    justifyContent: 'center',
+    minHeight: 48,
+    marginTop: spacing.md,
+  },
+  primaryButtonPressed: {
+    opacity: 0.88,
+  },
+  primaryButtonText: {
+    color: colors.onAccent,
+    fontSize: 15,
     fontWeight: '800',
   },
 });
