@@ -1,8 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppState, StyleSheet, View } from 'react-native';
 
-import { GlassSurface } from '../components/GlassSurface';
 import { Screen } from '../components/Screen';
 import {
   applyHabitAction,
@@ -13,7 +11,6 @@ import {
 import { reconcileSelectedDateAfterRollover } from '../domain/date-selection';
 import {
   analyticsSummary,
-  appTabs,
   buildDatePills,
   buildInitialDailyStatusHints,
   buildInitialHabitLogs,
@@ -28,18 +25,9 @@ import { DashboardScreen } from '../screens/DashboardScreen';
 import { HabitsScreen } from '../screens/HabitsScreen';
 import { MoodScreen } from '../screens/MoodScreen';
 import { NotesScreen } from '../screens/NotesScreen';
-import { colors } from '../theme/colors';
-import { radius, spacing } from '../theme/spacing';
+import { BottomNav } from './BottomNav';
 import { formatLocalDateLabel, toLocalDate } from '../utils/local-date';
 import type { AppTab, DatePillOption, HabitLog, LocalDate, MoodLog } from '../types/routinely';
-
-const tabIcons: Record<AppTab, keyof typeof Ionicons.glyphMap> = {
-  Dashboard: 'grid',
-  Habits: 'repeat',
-  Mood: 'happy',
-  Notes: 'document-text',
-  Analytics: 'stats-chart',
-};
 
 type DateViewState = {
   currentLocalDate: LocalDate;
@@ -269,107 +257,8 @@ function renderScreen({
   }
 }
 
-type BottomNavProps = {
-  activeTab: AppTab;
-  onChangeTab: (tab: AppTab) => void;
-};
-
-function BottomNav({ activeTab, onChangeTab }: BottomNavProps) {
-  return (
-    <View style={styles.bottomNavWrap}>
-      <GlassSurface
-        borderRadius={radius.xl}
-        contentStyle={styles.bottomNavRow}
-        noPadding
-        style={styles.bottomNavShell}
-        variant="nav"
-      >
-        {appTabs.map((tab) => {
-          const active = activeTab === tab;
-
-          return (
-            <Pressable
-              accessibilityLabel={`Open ${tab}`}
-              accessibilityRole="tab"
-              key={tab}
-              onPress={() => onChangeTab(tab)}
-              style={[styles.tabButton, active && styles.tabButtonActive]}
-            >
-              <View style={[styles.tabIconWrap, active && styles.tabIconWrapActive]}>
-                <Ionicons
-                  color={active ? colors.primary : colors.textMuted}
-                  name={tabIcons[tab]}
-                  size={20}
-                />
-              </View>
-              <Text style={[styles.tabLabel, active && styles.tabLabelActive]} numberOfLines={1}>
-                {tab}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </GlassSurface>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   content: {
     flex: 1,
-  },
-  bottomNavWrap: {
-    backgroundColor: 'transparent',
-    bottom: 0,
-    left: 0,
-    paddingBottom: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    position: 'absolute',
-    right: 0,
-  },
-  bottomNavShell: {
-    alignSelf: 'center',
-    maxWidth: 560,
-    width: '100%',
-  },
-  bottomNavRow: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    padding: spacing.xs,
-  },
-  tabButton: {
-    alignItems: 'center',
-    borderRadius: radius.lg,
-    flex: 1,
-    gap: 2,
-    justifyContent: 'center',
-    minHeight: 58,
-  },
-  tabButtonActive: {
-    backgroundColor: colors.primarySoft,
-  },
-  tabIconWrap: {
-    alignItems: 'center',
-    borderRadius: radius.pill,
-    height: 32,
-    justifyContent: 'center',
-    width: 32,
-  },
-  tabIconWrapActive: {
-    backgroundColor: 'rgba(168, 85, 247, 0.35)',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 10,
-  },
-  tabLabel: {
-    color: colors.textMuted,
-    fontSize: 10,
-    fontWeight: '800',
-    lineHeight: 14,
-    textAlign: 'center',
-  },
-  tabLabelActive: {
-    color: colors.primary,
   },
 });
