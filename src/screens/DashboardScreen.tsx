@@ -64,6 +64,7 @@ export function DashboardScreen({
   const reminderHabits = dailyHabits.filter(
     (habit) => habit.status === 'due' || habit.status === 'upcoming',
   );
+  const recentNotes = notes.slice(0, 3);
 
   if (dailyHabits.length === 0) {
     return (
@@ -152,8 +153,12 @@ export function DashboardScreen({
       </View>
 
       <Panel>
-        <SectionHeader title="Recent reflections" meta="Small notes tied to real behavior" compact />
-        <RecentReflectionsCard notes={notes.slice(0, 2)} />
+        <SectionHeader
+          title="Recent reflections"
+          meta={`${recentNotes.length} recent note${recentNotes.length === 1 ? '' : 's'}`}
+          compact
+        />
+        <RecentReflectionsCard notes={recentNotes} />
       </Panel>
     </ScrollView>
   );

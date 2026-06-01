@@ -49,6 +49,10 @@ const MOOD_OPTIONS = [
   { score: 5, emoji: '😄', label: 'Great' },
 ] as const;
 
+export function moodEmojiForScore(score: number): string {
+  return MOOD_OPTIONS.find((option) => option.score === score)?.emoji ?? '';
+}
+
 export function MoodSelector({
   selectedMood,
   onSelectMood,
@@ -92,22 +96,82 @@ export function MoodSelector({
   );
 }
 
-export function NoteCard({ note }: { note: NotePreview }) {
+function getNoteLinkStyle(linkedTo: string) {
+  if (linkedTo.toLowerCase().includes('mood')) {
+    return { backgroundColor: colors.wellnessSoft, tone: colors.wellness };
+  }
+
+  return { backgroundColor: colors.primarySoft, tone: colors.primary };
+}
+
+export function NoteCard({
+  note,
+  onPress,
+  variant = 'default',
+}: {
+  note: NotePreview;
+  onPress?: () => void;
+  variant?: 'default' | 'prominent';
+}) {
+  const linkStyle = getNoteLinkStyle(note.linkedTo);
+  const prominent = variant === 'prominent';
+
   return (
-    <GlassSurface borderRadius={radius.lg} style={styles.noteCard} variant="nested">
-      <Text style={styles.noteTitle}>{note.title}</Text>
-      <Text style={styles.noteBody}>{note.body}</Text>
-      <Text style={styles.noteLink}>Linked to {note.linkedTo}</Text>
-    </GlassSurface>
+    <Pressable
+      accessibilityLabel={`Open note ${note.title}, linked to ${note.linkedTo}`}
+      accessibilityRole="button"
+      disabled={!onPress}
+      onPress={onPress}
+      style={({ pressed }) => [onPress && pressed && styles.noteCardPressed]}
+    >
+      <GlassSurface
+        borderRadius={prominent ? radius.lg : radius.md}
+        noPadding
+        overflowHidden
+        variant={prominent ? 'card' : 'nested'}
+      >
+        <View
+          style={[
+            styles.noteRow,
+            prominent && styles.noteRowProminent,
+            { backgroundColor: linkStyle.backgroundColor },
+          ]}
+        >
+          <View style={[styles.noteAccent, prominent && styles.noteAccentProminent, { backgroundColor: linkStyle.tone }]} />
+          <View style={[styles.noteIcon, prominent && styles.noteIconProminent, { backgroundColor: linkStyle.tone }]}>
+            <Ionicons color={colors.onAccent} name="document-text" size={prominent ? 16 : 14} />
+          </View>
+          <View style={styles.noteCopy}>
+            <Text numberOfLines={prominent ? 2 : 1} style={[styles.noteTitle, prominent && styles.noteTitleProminent]}>
+              {note.title}
+            </Text>
+            <Text numberOfLines={prominent ? 3 : 2} style={[styles.noteBody, prominent && styles.noteBodyProminent]}>
+              {note.body}
+            </Text>
+            <View style={[styles.linkChip, prominent && styles.linkChipProminent, { backgroundColor: colors.glassStrong }]}>
+              <Ionicons color={linkStyle.tone} name="link" size={prominent ? 12 : 11} />
+              <Text numberOfLines={1} style={[styles.linkChipText, prominent && styles.linkChipTextProminent, { color: linkStyle.tone }]}>
+                {note.linkedTo}
+              </Text>
+            </View>
+          </View>
+          <Ionicons color={linkStyle.tone} name="chevron-forward" size={prominent ? 18 : 16} />
+        </View>
+      </GlassSurface>
+    </Pressable>
   );
 }
 
+export { getNoteLinkStyle };
+
 export function AnalyticsBars({
   bars,
+  fillColor = colors.primary,
   subtitle,
   title,
 }: {
   bars: AnalyticsBar[];
+  fillColor?: string;
   subtitle: string;
   title: string;
 }) {
@@ -120,7 +184,12 @@ export function AnalyticsBars({
         {bars.map((bar, index) => (
           <View key={bar.label} style={styles.barColumn}>
             <View style={styles.barTrack}>
-              <View style={[styles.barFill, { height: fillHeights[index] as DimensionValue }]} />
+              <View
+                style={[
+                  styles.barFill,
+                  { backgroundColor: fillColor, height: fillHeights[index] as DimensionValue },
+                ]}
+              />
             </View>
             <Text style={styles.barLabel}>{bar.label}</Text>
           </View>
@@ -241,25 +310,95 @@ const styles = StyleSheet.create({
   moodButtonTextSelected: {
     color: colors.wellness,
   },
-  noteCard: {
+  noteCardPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.99 }],
+  },
+  noteRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    minWidth: 0,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+  },
+  noteRowProminent: {
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  noteAccent: {
+    alignSelf: 'stretch',
+    width: 4,
+  },
+  noteAccentProminent: {
+    width: 5,
+  },
+  noteIcon: {
+    alignItems: 'center',
+    borderRadius: radius.pill,
+    flexShrink: 0,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  noteIconProminent: {
+    height: 40,
+    width: 40,
+  },
+  noteCopy: {
+    flex: 1,
     gap: spacing.xs,
+    minWidth: 0,
   },
   noteTitle: {
     color: colors.text,
     fontSize: 14,
     fontWeight: '800',
-    lineHeight: 21,
+    lineHeight: 20,
+  },
+  noteTitleProminent: {
+    fontSize: 16,
+    lineHeight: 22,
   },
   noteBody: {
     color: colors.textMuted,
     fontSize: 12,
+    fontWeight: '500',
     lineHeight: 18,
   },
-  noteLink: {
-    color: colors.primary,
-    fontSize: 11,
+  noteBodyProminent: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '500',
+    lineHeight: 20,
+    opacity: 0.82,
+  },
+  linkChip: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderRadius: radius.pill,
+    flexDirection: 'row',
+    gap: 4,
+    marginTop: 2,
+    maxWidth: '100%',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+  },
+  linkChipProminent: {
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 5,
+  },
+  linkChipText: {
+    flexShrink: 1,
+    fontSize: 10,
     fontWeight: '800',
-    lineHeight: 16,
+    lineHeight: 13,
+  },
+  linkChipTextProminent: {
+    fontSize: 11,
+    lineHeight: 14,
   },
   barChart: {
     alignItems: 'flex-end',

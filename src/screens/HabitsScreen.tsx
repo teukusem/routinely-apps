@@ -1,17 +1,13 @@
-import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetScrollView,
-  BottomSheetView,
-} from '@gorhom/bottom-sheet';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ColorValue } from 'react-native';
 
 import { GlassSurface } from '../components/GlassSurface';
 import { HabitCard } from '../components/habits/HabitCard';
 import { AppHeader, EmptyState, sharedStyles } from '../components/RoutinelyUI';
 import { Panel } from '../components/shared/Panel';
+import { RoutinelySheetModal } from '../components/shared/RoutinelySheetModal';
 import { SectionHeader } from '../components/shared/SectionHeader';
 import { colors } from '../theme/colors';
 import { radius, spacing } from '../theme/spacing';
@@ -69,20 +65,6 @@ export function HabitsScreen({
   const selectedHabit = useMemo(
     () => dailyHabits.find((habit) => habit.id === selectedHabitId),
     [dailyHabits, selectedHabitId],
-  );
-
-  const snapPoints = useMemo(() => {
-    if (sheetMode === 'detail') {
-      return ['42%'];
-    }
-    return ['64%'];
-  }, [sheetMode]);
-
-  const renderBackdrop = useCallback(
-    (props: any) => (
-      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} opacity={0.42} />
-    ),
-    [],
   );
 
   function resetCreateForm() {
@@ -181,226 +163,156 @@ export function HabitsScreen({
       <ScrollView contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide]} showsVerticalScrollIndicator={false}>
         <AppHeader subcopy="Manage routines" />
         <GlassSurface borderRadius={radius.xl}>
-          <View style={styles.headerTopRow}>
-            <View style={styles.headerIcon}>
-              <Ionicons color={colors.primary} name="repeat" size={22} />
+          <View style={styles.hero}>
+            <View style={styles.heroCopy}>
+              <Text style={styles.title}>Routines</Text>
+              <Text style={styles.subtitle}>Manage what repeats. Keep dashboard clean for doing, not configuring.</Text>
+              <View style={styles.heroMetaRow}>
+                <Ionicons color={colors.primary} name="repeat" size={11} />
+                <Text style={styles.heroMeta}>Daily habits & schedules</Text>
+              </View>
             </View>
-            <Text style={styles.headerMeta}>{dailyHabits.length} active</Text>
+            <View style={[styles.statusPill, dailyHabits.length > 0 && styles.statusPillActive]}>
+              <Text style={[styles.statusCount, dailyHabits.length > 0 && styles.statusCountActive]}>
+                {dailyHabits.length}
+              </Text>
+              <Text style={styles.statusLabel}>active</Text>
+            </View>
           </View>
-          <Text style={styles.title}>Routines</Text>
-          <Text style={styles.subtitle}>Manage what repeats. Keep dashboard clean for doing, not configuring.</Text>
         </GlassSurface>
 
         <View style={styles.filterRow}>
           {filters.map((filter) => {
             const selected = activeFilter === filter;
             return (
-              <Pressable key={filter} onPress={() => setActiveFilter(filter)} style={({ pressed }) => [pressed && styles.filterPressed]}>
-                <GlassSurface
-                  borderRadius={radius.pill}
-                  noPadding
-                  style={[styles.filterChip, selected && styles.filterChipActive]}
-                  variant={selected ? 'card' : 'nested'}
-                >
-                  <Text style={[styles.filterText, selected && styles.filterTextActive]}>{filter}</Text>
-                </GlassSurface>
+              <Pressable
+                key={filter}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                onPress={() => setActiveFilter(filter)}
+                style={({ pressed }) => [
+                  styles.filterBadge,
+                  selected && styles.filterBadgeActive,
+                  pressed && styles.filterBadgePressed,
+                ]}
+              >
+                <Text style={[styles.filterText, selected && styles.filterTextActive]}>{filter}</Text>
               </Pressable>
             );
           })}
         </View>
 
         <Panel>
-          <View style={styles.panelHeaderRow}>
-            <View style={styles.panelHeaderCopy}>
-              <SectionHeader title={`${activeFilter} habits`} meta={`${filteredHabits.length} shown`} compact />
+          <View style={styles.panelStack}>
+            <View style={styles.panelHeaderRow}>
+              <View style={styles.promptRow}>
+                <View style={styles.promptIcon}>
+                  <Ionicons color={colors.primary} name="layers-outline" size={15} />
+                </View>
+                <View style={styles.panelHeaderCopy}>
+                  <SectionHeader title={`${activeFilter} habits`} meta={`${filteredHabits.length} shown`} compact />
+                </View>
+              </View>
+              <Pressable
+                accessibilityLabel="Create habit"
+                accessibilityRole="button"
+                onPress={openCreateSheet}
+                style={({ pressed }) => [styles.createButton, pressed && styles.createButtonPressed]}
+              >
+                <Ionicons color={colors.onAccent} name="add" size={15} />
+                <Text style={styles.createButtonText}>Create</Text>
+              </Pressable>
             </View>
-            <Pressable accessibilityLabel="Create habit" accessibilityRole="button" onPress={openCreateSheet} style={styles.createButton}>
-              <Ionicons color={colors.onAccent} name="add" size={15} />
-              <Text style={styles.createButtonText}>Create</Text>
-            </Pressable>
+            {filteredHabits.map((habit) => (
+              <HabitCard
+                key={habit.id}
+                habit={habit}
+                onPressArchive={handleArchiveHabit}
+                onPressDetail={openDetailSheet}
+                onPressEdit={openEditSheet}
+                showManagement
+              />
+            ))}
+            {filteredHabits.length === 0 ? (
+              <EmptyState
+                description="Create one to start tracking this filter."
+                icon="repeat-outline"
+                title="No habits found"
+              />
+            ) : null}
           </View>
-          {filteredHabits.map((habit) => (
-            <HabitCard
-              key={habit.id}
-              habit={habit}
-              onPressArchive={handleArchiveHabit}
-              onPressDetail={openDetailSheet}
-              onPressEdit={openEditSheet}
-              showManagement
-            />
-          ))}
-          {filteredHabits.length === 0 ? (
-            <EmptyState
-              description="Create one to start tracking this filter."
-              icon="repeat-outline"
-              title="No habits found"
-            />
-          ) : null}
         </Panel>
       </ScrollView>
 
-      <BottomSheetModal
+      <RoutinelySheetModal
         ref={sheetRef}
-        backdropComponent={renderBackdrop}
-        backgroundStyle={styles.sheetBackground}
-        enableDynamicSizing
-        enablePanDownToClose
-        handleIndicatorStyle={styles.sheetHandle}
-        keyboardBehavior="interactive"
-        keyboardBlurBehavior="restore"
-        maxDynamicContentSize={640}
+        contentKey={sheetMode}
+        contentStyle={styles.sheetContent}
+        footer={
+          sheetMode === 'create' ? (
+            <SheetFormActions
+              canSubmit={newHabitName.trim().length > 0}
+              onCancel={closeSheet}
+              onSubmit={submitCreateHabit}
+              submitLabel="Create habit"
+            />
+          ) : sheetMode === 'edit' ? (
+            <SheetFormActions
+              canSubmit={editHabitName.trim().length > 0}
+              onCancel={closeSheet}
+              onSubmit={submitEditHabit}
+              submitLabel="Save changes"
+            />
+          ) : sheetMode === 'detail' && selectedHabit ? (
+            <DetailSheetActions
+              onArchive={() => {
+                closeSheet();
+                handleArchiveHabit(selectedHabit.id);
+              }}
+              onClose={closeSheet}
+              onEdit={() => openEditSheet(selectedHabit.id)}
+            />
+          ) : null
+        }
         onDismiss={handleSheetDismiss}
-        snapPoints={snapPoints}
       >
-        <BottomSheetScrollView contentContainerStyle={styles.sheetContent} showsVerticalScrollIndicator={false}>
-          {sheetMode === 'create' ? (
-            <>
-              <Text style={styles.sheetTitle}>Create Habit</Text>
+        <SheetHeader
+          icon={sheetMode === 'create' ? 'add-circle-outline' : sheetMode === 'edit' ? 'create-outline' : 'repeat-outline'}
+          onClose={closeSheet}
+          subtitle={
+            sheetMode === 'create'
+              ? 'Add a routine you want to repeat.'
+              : sheetMode === 'edit'
+                ? 'Update name, category, or schedule.'
+                : selectedHabit?.name ?? 'Routine details'
+          }
+          title={sheetMode === 'create' ? 'New habit' : sheetMode === 'edit' ? 'Edit habit' : 'Habit detail'}
+        />
 
-              <Text style={styles.inputLabel}>Name</Text>
-              <TextInput
-                onChangeText={setNewHabitName}
-                placeholder="e.g. 30-minute coding practice"
-                placeholderTextColor="#9CA3AF"
-                style={styles.nameInput}
-                value={newHabitName}
-              />
+        {sheetMode === 'create' ? (
+          <HabitFormFields
+            category={newHabitCategory}
+            name={newHabitName}
+            onChangeCategory={setNewHabitCategory}
+            onChangeName={setNewHabitName}
+            onChangeTimePeriod={setNewHabitTimePeriod}
+            timePeriod={newHabitTimePeriod}
+          />
+        ) : null}
 
-              <Text style={styles.inputLabel}>Category</Text>
-              <View style={styles.optionRow}>
-                {categoryOptions.map((category) => {
-                  const selected = newHabitCategory === category;
-                  return (
-                    <Pressable key={category} onPress={() => setNewHabitCategory(category)}>
-                      <GlassSurface
-                        borderRadius={radius.pill}
-                        noPadding
-                        style={[styles.optionChip, selected && styles.optionChipActive]}
-                        variant={selected ? 'card' : 'nested'}
-                      >
-                        <Text style={[styles.optionText, selected && styles.optionTextActive]}>{category}</Text>
-                      </GlassSurface>
-                    </Pressable>
-                  );
-                })}
-              </View>
+        {sheetMode === 'detail' && selectedHabit ? <HabitDetailContent habit={selectedHabit} /> : null}
 
-              <Text style={styles.inputLabel}>Time Period</Text>
-              <View style={styles.optionRow}>
-                {timePeriodOptions.map((period) => {
-                  const selected = newHabitTimePeriod === period;
-                  return (
-                    <Pressable key={period} onPress={() => setNewHabitTimePeriod(period)}>
-                      <GlassSurface
-                        borderRadius={radius.pill}
-                        noPadding
-                        style={[styles.optionChip, selected && styles.optionChipActive]}
-                        variant={selected ? 'card' : 'nested'}
-                      >
-                        <Text style={[styles.optionText, selected && styles.optionTextActive]}>{period}</Text>
-                      </GlassSurface>
-                    </Pressable>
-                  );
-                })}
-              </View>
-
-              <View style={styles.sheetActions}>
-                <Pressable onPress={closeSheet} style={styles.cancelButton}>
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </Pressable>
-                <Pressable
-                  disabled={newHabitName.trim().length === 0}
-                  onPress={submitCreateHabit}
-                  style={[styles.submitButton, newHabitName.trim().length === 0 && styles.submitButtonDisabled]}
-                >
-                  <Text style={styles.submitButtonText}>Create habit</Text>
-                </Pressable>
-              </View>
-            </>
-          ) : null}
-
-          {sheetMode === 'detail' && selectedHabit ? (
-            <>
-              <Text style={styles.sheetTitle}>Habit Detail</Text>
-              <Text style={styles.detailText}>Name: {selectedHabit.name}</Text>
-              <Text style={styles.detailText}>Category: {selectedHabit.category}</Text>
-              <Text style={styles.detailText}>Time period: {selectedHabit.timePeriod}</Text>
-              <Text style={styles.detailText}>Target: {selectedHabit.target} {selectedHabit.unit}</Text>
-              <Text style={styles.detailText}>Streak: {selectedHabit.streak} days</Text>
-
-              <Pressable onPress={closeSheet} style={styles.singleActionButton}>
-                <Text style={styles.submitButtonText}>Close</Text>
-              </Pressable>
-            </>
-          ) : null}
-
-          {sheetMode === 'edit' ? (
-            <>
-              <Text style={styles.sheetTitle}>Edit Habit</Text>
-
-              <Text style={styles.inputLabel}>Name</Text>
-              <TextInput
-                onChangeText={setEditHabitName}
-                placeholder="Habit name"
-                placeholderTextColor="#9CA3AF"
-                style={styles.nameInput}
-                value={editHabitName}
-              />
-
-              <Text style={styles.inputLabel}>Category</Text>
-              <View style={styles.optionRow}>
-                {categoryOptions.map((category) => {
-                  const selected = editHabitCategory === category;
-                  return (
-                    <Pressable key={category} onPress={() => setEditHabitCategory(category)}>
-                      <GlassSurface
-                        borderRadius={radius.pill}
-                        noPadding
-                        style={[styles.optionChip, selected && styles.optionChipActive]}
-                        variant={selected ? 'card' : 'nested'}
-                      >
-                        <Text style={[styles.optionText, selected && styles.optionTextActive]}>{category}</Text>
-                      </GlassSurface>
-                    </Pressable>
-                  );
-                })}
-              </View>
-
-              <Text style={styles.inputLabel}>Time Period</Text>
-              <View style={styles.optionRow}>
-                {timePeriodOptions.map((period) => {
-                  const selected = editHabitTimePeriod === period;
-                  return (
-                    <Pressable key={period} onPress={() => setEditHabitTimePeriod(period)}>
-                      <GlassSurface
-                        borderRadius={radius.pill}
-                        noPadding
-                        style={[styles.optionChip, selected && styles.optionChipActive]}
-                        variant={selected ? 'card' : 'nested'}
-                      >
-                        <Text style={[styles.optionText, selected && styles.optionTextActive]}>{period}</Text>
-                      </GlassSurface>
-                    </Pressable>
-                  );
-                })}
-              </View>
-
-              <View style={styles.sheetActions}>
-                <Pressable onPress={closeSheet} style={styles.cancelButton}>
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </Pressable>
-                <Pressable
-                  disabled={editHabitName.trim().length === 0}
-                  onPress={submitEditHabit}
-                  style={[styles.submitButton, editHabitName.trim().length === 0 && styles.submitButtonDisabled]}
-                >
-                  <Text style={styles.submitButtonText}>Save changes</Text>
-                </Pressable>
-              </View>
-            </>
-          ) : null}
-        </BottomSheetScrollView>
-      </BottomSheetModal>
+        {sheetMode === 'edit' ? (
+          <HabitFormFields
+            category={editHabitCategory}
+            name={editHabitName}
+            onChangeCategory={setEditHabitCategory}
+            onChangeName={setEditHabitName}
+            onChangeTimePeriod={setEditHabitTimePeriod}
+            timePeriod={editHabitTimePeriod}
+          />
+        ) : null}
+      </RoutinelySheetModal>
     </View>
   );
 }
@@ -414,29 +326,369 @@ function toHabitCategory(category: string): HabitCategory {
   return 'General';
 }
 
+const categoryIcons: Record<HabitCategory, keyof typeof Ionicons.glyphMap> = {
+  General: 'apps-outline',
+  Health: 'heart-outline',
+  Learning: 'book-outline',
+  Mindfulness: 'leaf-outline',
+  Productivity: 'briefcase-outline',
+};
+
+const timePeriodIcons: Record<TimePeriod, keyof typeof Ionicons.glyphMap> = {
+  Anytime: 'time-outline',
+  Afternoon: 'partly-sunny-outline',
+  Evening: 'moon-outline',
+  Morning: 'sunny-outline',
+};
+
+function SheetHeader({
+  icon,
+  onClose,
+  subtitle,
+  title,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  onClose: () => void;
+  subtitle: string;
+  title: string;
+}) {
+  return (
+    <View style={styles.sheetHeader}>
+      <View style={styles.sheetHeaderLeading}>
+        <View style={styles.sheetHeaderIcon}>
+          <Ionicons color={colors.primary} name={icon} size={22} />
+        </View>
+        <View style={styles.sheetHeaderCopy}>
+          <Text style={styles.sheetTitle}>{title}</Text>
+          <Text numberOfLines={2} style={styles.sheetSubtitle}>
+            {subtitle}
+          </Text>
+        </View>
+      </View>
+      <Pressable
+        accessibilityLabel="Close sheet"
+        accessibilityRole="button"
+        hitSlop={8}
+        onPress={onClose}
+        style={({ pressed }) => [styles.sheetCloseButton, pressed && styles.sheetCloseButtonPressed]}
+      >
+        <Ionicons color={colors.textMuted} name="close" size={20} />
+      </Pressable>
+    </View>
+  );
+}
+
+function HabitFormFields({
+  category,
+  name,
+  onChangeCategory,
+  onChangeName,
+  onChangeTimePeriod,
+  timePeriod,
+}: {
+  category: HabitCategory;
+  name: string;
+  onChangeCategory: (value: HabitCategory) => void;
+  onChangeName: (value: string) => void;
+  onChangeTimePeriod: (value: TimePeriod) => void;
+  timePeriod: TimePeriod;
+}) {
+  return (
+    <View style={styles.formStack}>
+      <View style={styles.fieldGroup}>
+        <Text style={styles.inputLabel}>Name</Text>
+        <GlassSurface borderRadius={radius.lg} contentStyle={styles.inputSurfaceContent} variant="nested">
+          <TextInput
+            autoCapitalize="sentences"
+            onChangeText={onChangeName}
+            placeholder="e.g. 30-minute coding practice"
+            placeholderTextColor={colors.textMuted}
+            returnKeyType="done"
+            style={styles.nameInput}
+            value={name}
+          />
+        </GlassSurface>
+      </View>
+
+      <View style={styles.fieldGroup}>
+        <Text style={styles.inputLabel}>Category</Text>
+        <View style={styles.optionRow}>
+          {categoryOptions.map((option) => {
+            const selected = category === option;
+            return (
+              <Pressable
+                key={option}
+                onPress={() => onChangeCategory(option)}
+                style={({ pressed }) => [pressed && styles.optionPressed]}
+              >
+                <GlassSurface
+                  borderRadius={radius.pill}
+                  contentStyle={styles.optionChipContent}
+                  noPadding
+                  style={[
+                    styles.optionChip,
+                    selected && styles.optionChipActive,
+                  ]}
+                  variant="nested"
+                >
+                  <Ionicons
+                    color={selected ? colors.primary : colors.textMuted}
+                    name={categoryIcons[option]}
+                    size={14}
+                  />
+                  <Text style={[styles.optionText, selected && styles.optionTextActive]}>{option}</Text>
+                </GlassSurface>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
+      <View style={styles.fieldGroup}>
+        <Text style={styles.inputLabel}>Time period</Text>
+        <View style={styles.optionRow}>
+          {timePeriodOptions.map((option) => {
+            const selected = timePeriod === option;
+            return (
+              <Pressable
+                key={option}
+                onPress={() => onChangeTimePeriod(option)}
+                style={({ pressed }) => [pressed && styles.optionPressed]}
+              >
+                <GlassSurface
+                  borderRadius={radius.pill}
+                  contentStyle={styles.optionChipContent}
+                  noPadding
+                  style={[
+                    styles.optionChip,
+                    selected && styles.optionChipActive,
+                  ]}
+                  variant="nested"
+                >
+                  <Ionicons
+                    color={selected ? colors.primary : colors.textMuted}
+                    name={timePeriodIcons[option]}
+                    size={14}
+                  />
+                  <Text style={[styles.optionText, selected && styles.optionTextActive]}>{option}</Text>
+                </GlassSurface>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function SheetFormActions({
+  canSubmit,
+  onCancel,
+  onSubmit,
+  submitLabel,
+}: {
+  canSubmit: boolean;
+  onCancel: () => void;
+  onSubmit: () => void;
+  submitLabel: string;
+}) {
+  return (
+    <View style={styles.sheetActions}>
+      <Pressable
+        onPress={onCancel}
+        style={({ pressed }) => [styles.cancelButton, pressed && styles.secondaryButtonPressed]}
+      >
+        <Text style={styles.cancelButtonText}>Cancel</Text>
+      </Pressable>
+      <Pressable
+        disabled={!canSubmit}
+        onPress={onSubmit}
+        style={({ pressed }) => [
+          styles.submitButton,
+          !canSubmit && styles.submitButtonDisabled,
+          pressed && canSubmit && styles.submitButtonPressed,
+        ]}
+      >
+        <Text style={styles.submitButtonText}>{submitLabel}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function HabitDetailContent({ habit }: { habit: DailyHabitView }) {
+  const statusTone = getDetailStatusTone(habit.status);
+
+  return (
+    <View style={styles.detailStack}>
+      <View style={styles.detailMetaRow}>
+        <View style={[styles.statusBadge, { backgroundColor: statusTone.soft, borderColor: statusTone.solid }]}>
+          <Text style={[styles.statusBadgeText, { color: statusTone.solid }]}>{getDetailStatusLabel(habit.status)}</Text>
+        </View>
+        <View style={styles.categoryBadge}>
+          <Text style={styles.categoryBadgeText}>{habit.category}</Text>
+        </View>
+        <View style={styles.timeBadge}>
+          <Ionicons color={colors.textMuted} name="time-outline" size={11} />
+          <Text style={styles.timeBadgeText}>{habit.timePeriod}</Text>
+        </View>
+      </View>
+
+      <View style={styles.detailStatsGrid}>
+        <DetailStatCard icon="time-outline" label="Time" value={habit.timePeriod} />
+        <DetailStatCard icon="flag-outline" label="Target" value={`${habit.target} ${habit.unit}`} />
+        <DetailStatCard icon="flame-outline" label="Streak" tone={colors.warning} value={`${habit.streak} days`} />
+        <DetailStatCard icon="trending-up-outline" label="Progress" tone={colors.primary} value={`${habit.progress}/${habit.target}`} />
+      </View>
+    </View>
+  );
+}
+
+function DetailSheetActions({
+  onArchive,
+  onClose,
+  onEdit,
+}: {
+  onArchive: () => void;
+  onClose: () => void;
+  onEdit: () => void;
+}) {
+  return (
+    <>
+      <Pressable
+        onPress={onEdit}
+        style={({ pressed }) => [styles.detailPrimaryButton, pressed && styles.submitButtonPressed]}
+      >
+        <Ionicons color={colors.onAccent} name="create-outline" size={16} />
+        <Text style={styles.submitButtonText}>Edit habit</Text>
+      </Pressable>
+      <Pressable
+        onPress={onArchive}
+        style={({ pressed }) => [styles.detailDangerButton, pressed && styles.secondaryButtonPressed]}
+      >
+        <Ionicons color={colors.danger} name="archive-outline" size={16} />
+        <Text style={styles.detailDangerButtonText}>Archive</Text>
+      </Pressable>
+      <Pressable
+        onPress={onClose}
+        style={({ pressed }) => [styles.detailGhostButton, pressed && styles.secondaryButtonPressed]}
+      >
+        <Text style={styles.cancelButtonText}>Close</Text>
+      </Pressable>
+    </>
+  );
+}
+
+function DetailStatCard({
+  icon,
+  label,
+  tone = colors.text,
+  value,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  tone?: ColorValue;
+  value: string;
+}) {
+  return (
+    <GlassSurface borderRadius={radius.lg} style={styles.detailStatCard} variant="nested">
+      <Ionicons color={tone} name={icon} size={16} />
+      <Text style={styles.detailStatLabel}>{label}</Text>
+      <Text numberOfLines={1} style={styles.detailStatValue}>
+        {value}
+      </Text>
+    </GlassSurface>
+  );
+}
+
+function getDetailStatusLabel(status: DailyHabitView['status']): string {
+  switch (status) {
+    case 'completed':
+      return 'Completed';
+    case 'due':
+      return 'Due now';
+    case 'missed':
+      return 'Missed';
+    case 'upcoming':
+      return 'Upcoming';
+    case 'skipped':
+      return 'Skipped';
+    default:
+      return 'Active';
+  }
+}
+
+function getDetailStatusTone(status: DailyHabitView['status']): { soft: string; solid: ColorValue } {
+  switch (status) {
+    case 'completed':
+      return { soft: colors.successSoft, solid: colors.success };
+    case 'due':
+      return { soft: colors.focusSoft, solid: colors.focus };
+    case 'missed':
+      return { soft: colors.warningSoft, solid: colors.warning };
+    case 'upcoming':
+      return { soft: colors.primarySoft, solid: colors.primary };
+    case 'skipped':
+      return { soft: colors.surfaceMuted, solid: colors.textMuted };
+    default:
+      return { soft: colors.surfaceMuted, solid: colors.textMuted };
+  }
+}
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
-  headerTopRow: {
+  hero: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: spacing.md,
+    justifyContent: 'space-between',
+  },
+  heroCopy: {
+    flex: 1,
+    gap: spacing.xs,
+    minWidth: 0,
+  },
+  heroMetaRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
+    gap: spacing.xs,
   },
-  headerIcon: {
+  heroMeta: {
+    color: colors.primary,
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 16,
+  },
+  statusPill: {
     alignItems: 'center',
     backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.lg,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
+    borderColor: colors.glassBorder,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    minHeight: 36,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
   },
-  headerMeta: {
+  statusPillActive: {
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primary,
+  },
+  statusCount: {
     color: colors.textMuted,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '800',
     lineHeight: 18,
+  },
+  statusCountActive: {
+    color: colors.primary,
+  },
+  statusLabel: {
+    color: colors.textMuted,
+    fontSize: 10,
+    fontWeight: '800',
+    lineHeight: 13,
+    textTransform: 'uppercase',
   },
   title: {
     color: colors.text,
@@ -446,40 +698,69 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: colors.textMuted,
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 12,
+    lineHeight: 18,
+    maxWidth: 240,
   },
   filterRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  filterChip: {
+  filterBadge: {
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.glassBorder,
+    borderRadius: radius.pill,
+    borderWidth: 1,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
-  filterChipActive: {
-    backgroundColor: colors.primary,
+  filterBadgeActive: {
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primary,
   },
-  filterPressed: {
-    opacity: 0.86,
+  filterBadgePressed: {
+    opacity: 0.88,
+    transform: [{ scale: 0.98 }],
   },
   filterText: {
-    color: colors.text,
+    color: colors.textMuted,
     fontSize: 12,
     fontWeight: '800',
+    lineHeight: 16,
   },
   filterTextActive: {
-    color: colors.onAccent,
+    color: colors.primary,
+  },
+  panelStack: {
+    gap: spacing.md,
   },
   panelHeaderRow: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.sm,
     justifyContent: 'space-between',
+  },
+  promptRow: {
+    alignItems: 'flex-start',
+    flex: 1,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    minWidth: 0,
+  },
+  promptIcon: {
+    alignItems: 'center',
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.pill,
+    flexShrink: 0,
+    height: 28,
+    justifyContent: 'center',
+    marginTop: 2,
+    width: 28,
   },
   panelHeaderCopy: {
     flex: 1,
+    minWidth: 0,
   },
   createButton: {
     alignItems: 'center',
@@ -488,90 +769,155 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.xs,
     minHeight: 36,
-    paddingHorizontal: spacing.sm + 2,
+    paddingHorizontal: spacing.sm + 4,
+    paddingVertical: spacing.xs,
+  },
+  createButtonPressed: {
+    backgroundColor: colors.primaryPressed,
+    opacity: 0.9,
   },
   createButtonText: {
     color: colors.onAccent,
     fontSize: 11,
     fontWeight: '800',
   },
-  sheetBackground: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-  },
-  sheetHandle: {
-    backgroundColor: '#D1D5DB',
-    width: 44,
-  },
   sheetContent: {
-    paddingBottom: spacing.xl,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.xs,
+    gap: spacing.md,
+  },
+  sheetHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
+  sheetHeaderLeading: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  sheetHeaderIcon: {
+    alignItems: 'center',
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.pill,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  sheetHeaderCopy: {
+    flex: 1,
+    gap: 2,
   },
   sheetTitle: {
-    color: '#111827',
+    color: colors.text,
     fontSize: 20,
     fontWeight: '800',
-    lineHeight: 28,
-    marginBottom: spacing.sm,
+    lineHeight: 26,
+  },
+  sheetSubtitle: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 17,
+  },
+  sheetCloseButton: {
+    alignItems: 'center',
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.glassBorder,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  sheetCloseButtonPressed: {
+    opacity: 0.86,
+  },
+  formStack: {
+    gap: spacing.md,
+  },
+  fieldGroup: {
+    gap: spacing.xs,
   },
   inputLabel: {
-    color: '#4B5563',
-    fontSize: 12,
-    fontWeight: '700',
-    marginBottom: spacing.xs,
-    marginTop: spacing.xs + 2,
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  inputSurfaceContent: {
+    height: 48,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
   },
   nameInput: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#D1D5DB',
-    borderRadius: radius.md,
-    borderWidth: 1,
-    color: '#111827',
-    minHeight: 44,
-    paddingHorizontal: spacing.md,
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '600',
+    includeFontPadding: false,
+    lineHeight: 18,
+    margin: 0,
+    paddingVertical: 0,
+    textAlignVertical: 'center',
+    ...(Platform.OS === 'ios' ? { paddingTop: 0 } : {}),
   },
   optionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  optionChip: {
-    backgroundColor: '#F3F4F6',
+  optionChipContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.xs,
+    height: 38,
+    justifyContent: 'center',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+  },
+  optionChip: {
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.glassBorder,
+    borderWidth: 1,
   },
   optionChipActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primary,
+  },
+  optionPressed: {
+    opacity: 0.88,
   },
   optionText: {
-    color: '#111827',
+    color: colors.textMuted,
     fontSize: 12,
     fontWeight: '700',
+    lineHeight: 14,
   },
   optionTextActive: {
-    color: colors.onAccent,
+    color: colors.primary,
   },
   sheetActions: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.md,
+    gap: spacing.md,
   },
   cancelButton: {
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderColor: '#D1D5DB',
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.glassBorder,
     borderRadius: radius.pill,
     borderWidth: 1,
     flex: 1,
     justifyContent: 'center',
-    minHeight: 44,
+    minHeight: 48,
   },
   cancelButtonText: {
-    color: '#111827',
-    fontSize: 12,
+    color: colors.text,
+    fontSize: 13,
     fontWeight: '800',
+  },
+  secondaryButtonPressed: {
+    opacity: 0.86,
   },
   submitButton: {
     alignItems: 'center',
@@ -579,29 +925,121 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     flex: 1,
     justifyContent: 'center',
-    minHeight: 44,
+    minHeight: 48,
+  },
+  submitButtonPressed: {
+    backgroundColor: colors.primaryPressed,
+    opacity: 0.94,
   },
   submitButtonDisabled: {
-    backgroundColor: colors.primaryPressed,
-    opacity: 0.5,
+    backgroundColor: colors.primarySoft,
+    opacity: 0.72,
   },
   submitButtonText: {
     color: colors.onAccent,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '800',
   },
-  singleActionButton: {
+  detailStack: {
+    gap: spacing.md,
+  },
+  detailMetaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  statusBadge: {
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 14,
+  },
+  categoryBadge: {
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primary,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
+  },
+  categoryBadgeText: {
+    color: colors.primary,
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 14,
+  },
+  timeBadge: {
+    alignItems: 'center',
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.glassBorder,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 4,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
+  },
+  timeBadgeText: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 14,
+  },
+  detailStatsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  detailStatCard: {
+    gap: spacing.xs,
+    minWidth: '47%',
+    padding: spacing.md,
+  },
+  detailStatLabel: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  detailStatValue: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 20,
+  },
+  detailPrimaryButton: {
     alignItems: 'center',
     backgroundColor: colors.primary,
     borderRadius: radius.pill,
+    flexDirection: 'row',
+    gap: spacing.xs,
     justifyContent: 'center',
-    marginTop: spacing.lg,
-    minHeight: 44,
+    minHeight: 48,
   },
-  detailText: {
-    color: '#111827',
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: spacing.xs,
+  detailDangerButton: {
+    alignItems: 'center',
+    backgroundColor: colors.dangerSoft,
+    borderColor: 'rgba(248, 113, 113, 0.35)',
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    justifyContent: 'center',
+    minHeight: 48,
+  },
+  detailDangerButtonText: {
+    color: colors.danger,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  detailGhostButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
   },
 });

@@ -9,6 +9,7 @@ import { radius, spacing } from '../../theme/spacing';
 import type { MoodDetailView } from '../../types/routinely';
 
 type MoodCheckInCardProps = {
+  dateLabel?: string;
   moodDetail: MoodDetailView;
   onSelectMood: (mood: number) => void;
   selectedMood: number;
@@ -19,10 +20,27 @@ function parseScaleValue(label: string): number {
   return Number.isFinite(value) ? value / 10 : 0;
 }
 
-export function MoodCheckInCard({ moodDetail, onSelectMood, selectedMood }: MoodCheckInCardProps) {
+export function MoodCheckInCard({
+  dateLabel,
+  moodDetail,
+  onSelectMood,
+  selectedMood,
+}: MoodCheckInCardProps) {
   const energyValue = moodDetail.hasFixture ? parseScaleValue(moodDetail.energyLabel) : 0;
   const stressValue = moodDetail.hasFixture ? parseScaleValue(moodDetail.stressLabel) : 0;
   const moodLogged = selectedMood > 0;
+  const promptText = moodLogged
+    ? dateLabel
+      ? `Tap to update ${dateLabel}'s mood`
+      : 'Tap a score to update your mood'
+    : dateLabel
+      ? `Tap a mood for ${dateLabel}`
+      : 'How are you feeling today?';
+  const summaryLabel = moodLogged
+    ? dateLabel
+      ? `${dateLabel} mood`
+      : 'Today’s mood'
+    : 'Mood insight';
 
   return (
     <View style={styles.root}>
@@ -30,9 +48,7 @@ export function MoodCheckInCard({ moodDetail, onSelectMood, selectedMood }: Mood
         <View style={styles.promptIcon}>
           <Ionicons color={colors.wellness} name="happy-outline" size={16} />
         </View>
-        <Text style={styles.promptText}>
-          {moodLogged ? 'Tap a score to update your mood' : 'How are you feeling today?'}
-        </Text>
+        <Text style={styles.promptText}>{promptText}</Text>
       </View>
 
       <MoodSelector selectedMood={selectedMood} onSelectMood={onSelectMood} variant="rich" />
@@ -41,9 +57,9 @@ export function MoodCheckInCard({ moodDetail, onSelectMood, selectedMood }: Mood
         <View style={[styles.summaryCard, moodLogged && styles.summaryCardLogged]}>
           <View style={styles.summaryAccent} />
           <View style={styles.summaryBody}>
-            <Text style={styles.summaryLabel}>{moodLogged ? 'Today’s mood' : 'Mood insight'}</Text>
+            <Text style={styles.summaryLabel}>{summaryLabel}</Text>
             <Text style={styles.summaryText}>{moodDetail.summary}</Text>
-            {moodDetail.hasFixture ? (
+            {moodLogged && moodDetail.hasFixture ? (
               <View style={styles.scaleRow}>
                 <ScaleChip
                   label="Energy"
