@@ -1,46 +1,59 @@
-import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View, type ColorValue } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { GlassSurface } from '../GlassSurface';
+import { IconBadge, type IconAccentName, type IconName } from './Icon';
 import { colors } from '../../theme/colors';
 import { radius, spacing } from '../../theme/spacing';
 
 type MetricCardProps = {
-  icon: keyof typeof Ionicons.glyphMap;
+  accent: IconAccentName;
+  icon: IconName;
   label: string;
   layout?: 'inline' | 'stack';
-  tone: ColorValue;
   value: string;
 };
 
-export function MetricCard({ icon, label, layout = 'inline', tone, value }: MetricCardProps) {
+export function MetricCard({ accent, icon, label, layout = 'inline', value }: MetricCardProps) {
   const stacked = layout === 'stack';
 
   return (
-    <GlassSurface
-      borderRadius={radius.lg}
-      contentStyle={[styles.metricCard, stacked && styles.metricCardStack]}
-      style={styles.metricShell}
-    >
-      <View style={[styles.metricIcon, stacked && styles.metricIconStack, { backgroundColor: tone }]}>
-        <Ionicons color={colors.onAccent} name={icon} size={14} />
-      </View>
-      <View style={[styles.metricCopy, stacked && styles.metricCopyStack]}>
-        <Text numberOfLines={1} style={[styles.metricValue, stacked && styles.metricValueStack]}>
-          {value}
-        </Text>
-        <Text numberOfLines={stacked ? 2 : 1} style={[styles.metricLabel, stacked && styles.metricLabelStack]}>
-          {label}
-        </Text>
-      </View>
-    </GlassSurface>
+    <View accessible accessibilityLabel={`${label}: ${value}`} accessibilityRole="text" style={styles.metricShell}>
+      <GlassSurface
+        borderRadius={radius.lg}
+        contentStyle={[styles.metricCard, stacked && styles.metricCardStack]}
+        style={stacked ? styles.metricCardSurfaceStack : undefined}
+      >
+        <IconBadge
+          accent={accent}
+          badgeSize={stacked ? 28 : 26}
+          name={icon}
+          size="sm"
+          style={stacked ? styles.metricIconStack : styles.metricIcon}
+        />
+        <View style={[styles.metricCopy, stacked && styles.metricCopyStack]}>
+          <Text numberOfLines={1} style={[styles.metricValue, stacked && styles.metricValueStack]}>
+            {value}
+          </Text>
+          <Text numberOfLines={2} style={[styles.metricLabel, stacked && styles.metricLabelStack]}>
+            {label}
+          </Text>
+        </View>
+      </GlassSurface>
+    </View>
   );
 }
 
+const STACKED_MIN_HEIGHT = 108;
+
 const styles = StyleSheet.create({
   metricShell: {
+    alignSelf: 'stretch',
     flex: 1,
     minWidth: 0,
+  },
+  metricCardSurfaceStack: {
+    flex: 1,
+    minHeight: STACKED_MIN_HEIGHT,
   },
   metricCard: {
     alignItems: 'center',
@@ -50,22 +63,19 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   metricCardStack: {
+    flex: 1,
     flexDirection: 'column',
     gap: spacing.xs,
+    justifyContent: 'center',
+    minHeight: STACKED_MIN_HEIGHT,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm + 2,
   },
   metricIcon: {
-    alignItems: 'center',
-    borderRadius: radius.pill,
     flexShrink: 0,
-    height: 26,
-    justifyContent: 'center',
-    width: 26,
   },
   metricIconStack: {
-    height: 28,
-    width: 28,
+    flexShrink: 0,
   },
   metricCopy: {
     flex: 1,
@@ -74,8 +84,9 @@ const styles = StyleSheet.create({
   },
   metricCopyStack: {
     alignItems: 'center',
-    flex: 0,
+    flex: 1,
     gap: 2,
+    justifyContent: 'center',
     width: '100%',
   },
   metricValue: {
@@ -96,8 +107,9 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
   metricLabelStack: {
-    fontSize: 10,
+    fontSize: 11,
     lineHeight: 13,
+    minHeight: 26,
     textAlign: 'center',
   },
 });

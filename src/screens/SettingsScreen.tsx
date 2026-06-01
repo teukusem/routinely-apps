@@ -1,7 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { GlassSurface } from '../components/GlassSurface';
+import { Icon, IconBadge } from '../components/shared/Icon';
+import { settingsRowPresets } from '../components/shared/iconPresets';
 import { Panel } from '../components/shared/Panel';
 import { SectionHeader } from '../components/shared/SectionHeader';
 import { sharedStyles } from '../components/RoutinelyUI';
@@ -17,28 +18,26 @@ type SettingsScreenProps = {
 };
 
 type SettingsRowConfig = {
-  icon: keyof typeof Ionicons.glyphMap;
-  id: string;
+  id: keyof typeof settingsRowPresets;
   label: string;
   meta?: string;
-  tone?: string;
 };
 
 const profileRows: SettingsRowConfig[] = [
-  { icon: 'person-outline', id: 'edit-profile', label: 'Edit profile', meta: 'Name, photo, timezone' },
-  { icon: 'mail-outline', id: 'email', label: 'Email & account', meta: 'Sign-in and recovery' },
+  { id: 'edit-profile', label: 'Edit profile', meta: 'Name, photo, timezone' },
+  { id: 'email', label: 'Email & account', meta: 'Sign-in and recovery' },
 ];
 
 const preferenceRows: SettingsRowConfig[] = [
-  { icon: 'notifications-outline', id: 'notifications', label: 'Notifications', meta: 'Reminders and quiet hours' },
-  { icon: 'moon-outline', id: 'appearance', label: 'Appearance', meta: 'Theme and display' },
-  { icon: 'lock-closed-outline', id: 'privacy', label: 'Privacy & security', meta: 'App lock and data' },
-  { icon: 'cloud-outline', id: 'sync', label: 'Sync & backup', meta: 'Devices and export' },
+  { id: 'notifications', label: 'Notifications', meta: 'Reminders and quiet hours' },
+  { id: 'appearance', label: 'Appearance', meta: 'Theme and display' },
+  { id: 'privacy', label: 'Privacy & security', meta: 'App lock and data' },
+  { id: 'sync', label: 'Sync & backup', meta: 'Devices and export' },
 ];
 
 const supportRows: SettingsRowConfig[] = [
-  { icon: 'help-circle-outline', id: 'help', label: 'Help & support', meta: 'FAQ and contact' },
-  { icon: 'information-circle-outline', id: 'about', label: 'About Routinely', meta: 'Version 1.0.0' },
+  { id: 'help', label: 'Help & support', meta: 'FAQ and contact' },
+  { id: 'about', label: 'About Routinely', meta: 'Version 1.0.0' },
 ];
 
 export function SettingsScreen({
@@ -72,7 +71,7 @@ export function SettingsScreen({
           onPress={onClose}
           style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
         >
-          <Ionicons color={colors.text} name="chevron-back" size={20} />
+          <Icon accent="lavender" name="arrow-back-circle-outline" size={20} />
         </Pressable>
         <Text style={styles.topBarTitle}>Settings</Text>
         <View style={styles.topBarSpacer} />
@@ -132,7 +131,7 @@ export function SettingsScreen({
         onPress={confirmLogout}
         style={({ pressed }) => [styles.logoutButton, pressed && styles.logoutButtonPressed]}
       >
-        <Ionicons color={colors.danger} name="log-out-outline" size={18} />
+        <Icon accent="coral" name="exit-outline" size="lg" />
         <Text style={styles.logoutText}>Log out</Text>
       </Pressable>
     </ScrollView>
@@ -140,25 +139,24 @@ export function SettingsScreen({
 }
 
 function SettingsRow({ onPress, row }: { onPress: () => void; row: SettingsRowConfig }) {
-  const tone = row.tone ?? colors.primary;
+  const preset = settingsRowPresets[row.id];
 
   return (
     <Pressable
       accessibilityLabel={row.label}
+      accessibilityHint={row.meta}
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [pressed && styles.rowPressed]}
     >
       <GlassSurface borderRadius={radius.md} noPadding overflowHidden variant="nested">
         <View style={styles.settingsRow}>
-          <View style={[styles.rowIcon, { backgroundColor: colors.primarySoft }]}>
-            <Ionicons color={tone} name={row.icon} size={16} />
-          </View>
+          <IconBadge accent={preset.accent} badgeSize={32} name={preset.icon} size="md" />
           <View style={styles.rowCopy}>
             <Text style={styles.rowLabel}>{row.label}</Text>
             {row.meta ? <Text style={styles.rowMeta}>{row.meta}</Text> : null}
           </View>
-          <Ionicons color={colors.textMuted} name="chevron-forward" size={16} />
+          <Icon accent={preset.accent} name="chevron-forward" />
         </View>
       </GlassSurface>
     </Pressable>
@@ -180,9 +178,9 @@ const styles = StyleSheet.create({
     borderColor: colors.glassBorder,
     borderRadius: radius.pill,
     borderWidth: 1,
-    height: 36,
+    height: 44,
     justifyContent: 'center',
-    width: 36,
+    width: 44,
   },
   backButtonPressed: {
     opacity: 0.86,
@@ -194,7 +192,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   topBarSpacer: {
-    width: 36,
+    width: 44,
   },
   profileHero: {
     alignItems: 'center',
@@ -245,7 +243,7 @@ const styles = StyleSheet.create({
   },
   profileBadgeText: {
     color: colors.textMuted,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     lineHeight: 13,
     textTransform: 'uppercase',
@@ -258,7 +256,6 @@ const styles = StyleSheet.create({
   },
   rowPressed: {
     opacity: 0.9,
-    transform: [{ scale: 0.99 }],
   },
   settingsRow: {
     alignItems: 'center',
@@ -267,14 +264,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
     paddingHorizontal: spacing.sm + 4,
     paddingVertical: spacing.sm + 2,
-  },
-  rowIcon: {
-    alignItems: 'center',
-    borderRadius: radius.pill,
-    flexShrink: 0,
-    height: 32,
-    justifyContent: 'center',
-    width: 32,
   },
   rowCopy: {
     flex: 1,
@@ -296,7 +285,7 @@ const styles = StyleSheet.create({
   logoutButton: {
     alignItems: 'center',
     backgroundColor: colors.dangerSoft,
-    borderColor: 'rgba(248, 113, 113, 0.35)',
+    borderColor: colors.danger,
     borderRadius: radius.pill,
     borderWidth: 1,
     flexDirection: 'row',

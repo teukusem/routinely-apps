@@ -1,9 +1,11 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View, type ColorValue } from 'react-native';
 
 import { GlassSurface } from '../GlassSurface';
+import { Icon, IconBadge } from '../shared/Icon';
+import { getCategoryIconPreset } from '../shared/iconPresets';
 import { ProgressBar } from '../shared/ProgressBar';
 import { colors } from '../../theme/colors';
+import { iconAccentPair } from '../../theme/iconColors';
 import { radius, spacing } from '../../theme/spacing';
 import type { DailyHabitView, Habit, HabitStatus } from '../../types/routinely';
 
@@ -37,33 +39,33 @@ function getHabitActionLabel(habit: DailyHabitView | Habit, completed: boolean):
   }
 }
 
-function getStatusAccent(status: HabitStatus, habitAccent: ColorValue): ColorValue {
+function getStatusAccent(status: HabitStatus): ColorValue {
   switch (status) {
     case 'completed':
-      return colors.success;
+      return iconAccentPair('mint').icon;
     case 'due':
-      return colors.focus;
+      return iconAccentPair('amber').icon;
     case 'missed':
-      return colors.warning;
+      return iconAccentPair('coral').icon;
     case 'upcoming':
-      return colors.primary;
+      return iconAccentPair('sky').icon;
     case 'skipped':
       return colors.textMuted;
     default:
-      return habitAccent;
+      return iconAccentPair('violet').icon;
   }
 }
 
 function getStatusTint(status: HabitStatus): string {
   switch (status) {
     case 'completed':
-      return colors.successSoft;
+      return iconAccentPair('mint').soft;
     case 'due':
-      return colors.focusSoft;
+      return iconAccentPair('amber').soft;
     case 'missed':
-      return colors.warningSoft;
+      return iconAccentPair('coral').soft;
     case 'upcoming':
-      return colors.primarySoft;
+      return iconAccentPair('sky').soft;
     case 'skipped':
       return colors.surfaceMuted;
     default:
@@ -100,8 +102,9 @@ export function HabitCard({
   const completed = dailyHabit ? habit.status === 'completed' : false;
   const progress = dailyHabit ? habit.progress : 0;
   const status = dailyHabit ? habit.status : undefined;
-  const statusAccent = status ? getStatusAccent(status, habit.accent) : habit.accent;
-  const statusTint = status ? getStatusTint(status) : colors.surfaceMuted;
+  const statusAccent = status ? getStatusAccent(status) : iconAccentPair(getCategoryIconPreset(habit.category).accent).icon;
+  const statusTint = status ? getStatusTint(status) : iconAccentPair(getCategoryIconPreset(habit.category).accent).soft;
+  const categoryPreset = getCategoryIconPreset(habit.category);
   const progressText =
     habit.goalType === 'checkbox'
       ? completed
@@ -117,9 +120,7 @@ export function HabitCard({
         <View style={[styles.habitAccent, { backgroundColor: statusAccent }]} />
         <View style={styles.habitBody}>
           <View style={styles.habitTopRow}>
-            <View style={[styles.habitIcon, { backgroundColor: habit.accent }]}>
-              <View style={styles.habitIconDot} />
-            </View>
+            <IconBadge accent={categoryPreset.accent} badgeSize={28} name={categoryPreset.name} size="sm" />
             <View style={styles.habitTitleGroup}>
               <View style={styles.habitTitleLine}>
                 <Text
@@ -146,16 +147,18 @@ export function HabitCard({
                   completed && styles.actionButtonDone,
                   !completed && status === 'due' && styles.actionButtonDue,
                   !completed && status === 'missed' && styles.actionButtonMissed,
+                  !completed && status === 'upcoming' && styles.actionButtonUpcoming,
                 ]}
               >
-                <ActionContent completed={completed} goalType={habit.goalType} />
+                <ActionContent completed={completed} goalType={habit.goalType} status={status} />
               </View>
             ) : null}
           </View>
           {dailyHabit ? (
             <View style={styles.habitBottomRow}>
               <ProgressBar
-                accent={completed ? colors.success : statusAccent}
+                accent={completed ? iconAccentPair('mint').icon : statusAccent}
+                label={`${habit.name} progress`}
                 value={progressRatio}
               />
               <Text style={styles.progressText}>{progressText}</Text>
@@ -170,18 +173,24 @@ export function HabitCard({
           {showManagement ? (
             <View style={styles.managementRow}>
               <Pressable
+                accessibilityLabel={`View details for ${habit.name}`}
+                accessibilityRole="button"
                 onPress={() => onPressDetail?.(habit.id)}
                 style={({ pressed }) => [styles.managementActionWrap, pressed && styles.managementPressed]}
               >
                 <Text style={styles.managementAction}>Detail</Text>
               </Pressable>
               <Pressable
+                accessibilityLabel={`Edit ${habit.name}`}
+                accessibilityRole="button"
                 onPress={() => onPressEdit?.(habit.id)}
                 style={({ pressed }) => [styles.managementActionWrap, pressed && styles.managementPressed]}
               >
                 <Text style={styles.managementAction}>Edit</Text>
               </Pressable>
               <Pressable
+                accessibilityLabel={`Archive ${habit.name}`}
+                accessibilityRole="button"
                 onPress={() => onPressArchive?.(habit.id)}
                 style={({ pressed }) => [styles.managementActionWrap, pressed && styles.managementPressed]}
               >
@@ -209,6 +218,7 @@ export function HabitCard({
     <Pressable
       accessibilityLabel={getHabitActionLabel(habit, completed)}
       accessibilityRole="button"
+      accessibilityState={{ checked: completed }}
       onPress={() => onToggle?.(habit.id)}
       style={({ pressed }) => [styles.habitCardWrap, pressed && styles.habitCardPressed]}
     >
@@ -220,12 +230,14 @@ export function HabitCard({
 function ActionContent({
   completed,
   goalType,
+  status,
 }: {
   completed: boolean;
   goalType: Habit['goalType'];
+  status?: HabitStatus;
 }) {
   if (completed) {
-    return <Ionicons color={colors.onAccent} name="checkmark" size={22} />;
+    return <Icon color="#FFFFFF" name="checkmark" size={22} />;
   }
 
   if (goalType === 'numeric') {
@@ -236,7 +248,10 @@ function ActionContent({
     return <Text style={styles.actionLabel}>+15m</Text>;
   }
 
-  return <Ionicons color={colors.onAccent} name="checkmark" size={22} />;
+  const accent =
+    status === 'due' ? 'amber' : status === 'missed' ? 'coral' : status === 'upcoming' ? 'sky' : 'mint';
+
+  return <Icon color={iconAccentPair(accent).icon} name="checkmark-outline" size={20} />;
 }
 
 function StatusBadge({ status }: { status: HabitStatus }) {
@@ -262,7 +277,6 @@ const styles = StyleSheet.create({
   },
   habitCardPressed: {
     opacity: 0.92,
-    transform: [{ scale: 0.99 }],
   },
   habitCard: {
     flexDirection: 'row',
@@ -273,30 +287,16 @@ const styles = StyleSheet.create({
   },
   habitBody: {
     flex: 1,
-    gap: spacing.sm,
+    gap: spacing.xs,
     minWidth: 0,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 4,
+    paddingVertical: spacing.sm + 2,
   },
   habitTopRow: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.sm,
     minWidth: 0,
-  },
-  habitIcon: {
-    alignItems: 'center',
-    borderRadius: radius.pill,
-    flexShrink: 0,
-    height: 28,
-    justifyContent: 'center',
-    width: 28,
-  },
-  habitIconDot: {
-    backgroundColor: colors.onAccent,
-    borderRadius: radius.pill,
-    height: 8,
-    width: 8,
   },
   habitTitleGroup: {
     flex: 1,
@@ -355,31 +355,40 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     color: colors.text,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     lineHeight: 13,
   },
   actionButton: {
     alignItems: 'center',
-    backgroundColor: colors.primary,
+    backgroundColor: iconAccentPair('sky').soft,
+    borderColor: iconAccentPair('sky').icon,
     borderRadius: radius.pill,
+    borderWidth: 2,
     flexShrink: 0,
-    height: 48,
+    height: 44,
     justifyContent: 'center',
-    minWidth: 48,
-    paddingHorizontal: spacing.sm,
+    width: 44,
+  },
+  actionButtonUpcoming: {
+    backgroundColor: iconAccentPair('sky').soft,
+    borderColor: iconAccentPair('sky').icon,
   },
   actionButtonDue: {
-    backgroundColor: colors.focus,
+    backgroundColor: iconAccentPair('amber').soft,
+    borderColor: iconAccentPair('amber').icon,
   },
   actionButtonMissed: {
-    backgroundColor: colors.warning,
+    backgroundColor: iconAccentPair('coral').soft,
+    borderColor: iconAccentPair('coral').icon,
   },
   actionButtonDone: {
-    backgroundColor: colors.success,
+    backgroundColor: iconAccentPair('mint').icon,
+    borderColor: iconAccentPair('mint').icon,
+    borderWidth: 0,
   },
   actionLabel: {
-    color: colors.onAccent,
+    color: colors.text,
     fontSize: 13,
     fontWeight: '800',
     lineHeight: 16,
@@ -404,9 +413,13 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     flexDirection: 'row',
     gap: spacing.md,
-    paddingTop: spacing.sm,
+    marginTop: 2,
+    paddingTop: spacing.xs,
   },
   managementActionWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 32,
     paddingVertical: 2,
   },
   managementPressed: {

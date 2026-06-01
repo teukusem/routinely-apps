@@ -2,16 +2,17 @@
 
 ## Design Direction
 
-Routinely uses a **dark glass** visual language: charcoal depth, soft aurora
-glows, frosted surfaces, and high-contrast typography. It should feel premium
-and immersive without becoming a marketing landing page or a generic wellness
-template.
+Routinely uses a **neutral black** visual foundation: true-black depth,
+charcoal cards, off-white typography, and restrained gray signals. It should
+feel focused, premium, and crisp without becoming flat or visually noisy.
 
 Keywords:
 
 - Dark.
-- Glass.
-- Layered.
+- Solid.
+- High-contrast.
+- Charcoal.
+- Restrained.
 - Clear.
 - Fast.
 - Rounded.
@@ -23,52 +24,55 @@ Keywords:
 - Completion should feel immediate and satisfying.
 - Analytics should clarify behavior, not decorate the app.
 - Mood and notes should feel private and quiet.
-- The screen background uses a full-bleed portrait wallpaper
-  (`assets/background.png`) with a light dark scrim; cards and navigation use
-  frosted glass (`GlassSurface`).
+- The screen background uses the solid `background` token. Avoid wallpaper,
+  gradients, and decorative glows behind content.
+- Cards and navigation can use restrained frosted surfaces (`GlassSurface`) to
+  preserve hierarchy without reducing text contrast.
 - Avoid flat cream or white card stacks on dark backgrounds.
 - Use cards only for repeated items, modals, and framed tools.
 - Keep mobile tap targets large and predictable.
 
 ## Approved primitives
 
-- `ImageBackground` for the full-bleed wallpaper (`assets/background.png`).
+- A plain `View` using the solid `background` token for the full-bleed screen
+  background.
 - `expo-blur` `BlurView` for frosted surfaces (native); semi-opaque fallback on web.
 
 ## Color Tokens
 
-Dark glass palette (see [`src/theme/colors.ts`](../src/theme/colors.ts)).
+Neutral-black palette (see [`src/theme/colors.ts`](../src/theme/colors.ts)).
+App surfaces use black `#000000`, charcoal `#202020`, off-white `#F6F6F6`,
+gray `#A6A6A6`, and transparent variants. Semantic roles remain named by
+purpose, but use neutral tones so status never depends on hue alone.
 
 ```ts
 export const colors = {
-  background: '#0B0C10',
-  backgroundElevated: '#12141A',
-  glass: 'rgba(255, 255, 255, 0.08)',
-  glassBorder: 'rgba(255, 255, 255, 0.16)',
-  auroraPurple: '#7B3FE4',
-  auroraMagenta: '#D946A8',
-  auroraPeach: '#F59A5A',
-  text: '#F5F5F7',
-  textMuted: '#9CA3AF',
-  primary: '#A855F7',
-  primarySoft: 'rgba(168, 85, 247, 0.22)',
-  success: '#4ADE80',
-  warning: '#FBBF24',
-  danger: '#F87171',
-  focus: '#60A5FA',
-  wellness: '#2DD4BF',
-  onAccent: '#FFFFFF',
+  background: '#000000',
+  backgroundElevated: '#202020',
+  glass: 'rgba(246, 246, 246, 0.14)',
+  glassBorder: 'rgba(246, 246, 246, 0.36)',
+  text: '#F6F6F6',
+  textMuted: '#A6A6A6',
+  primary: '#F6F6F6',
+  primarySoft: 'rgba(246, 246, 246, 0.14)',
+  success: '#F6F6F6',
+  warning: '#D8D8D8',
+  danger: '#F6F6F6',
+  focus: '#D8D8D8',
+  wellness: '#A6A6A6',
+  onAccent: '#000000',
 } as const;
 ```
 
 Usage rules:
 
-- Violet primary is for main actions, active tabs, and key metrics.
+- Off-white primary is for main actions, active tabs, and key metrics.
 - Translucent `*Soft` tokens are for badges and selected chip backgrounds.
-- Success green is for completed habits.
-- Warning amber is for overdue or attention states.
-- Danger red is for destructive actions.
-- Focus blue and wellness teal are accents only, not dominant backgrounds.
+- Off-white marks completion and positive momentum.
+- Off-white marks overdue, attention, and destructive states. Pair these states
+  with explicit labels because color is intentionally restrained.
+- Gray supports secondary information, focus states, and wellness data. Pair
+  semantic states with icons, text, or shapes because the palette is monochrome.
 
 ## Spacing Tokens
 
@@ -319,20 +323,42 @@ Rules:
 
 ## Motion And Feedback
 
-- Complete action: subtle scale or check transition under 180ms.
+- Complete action: instant state change with a checkmark and optional subtle fade.
 - Screen transitions: native defaults.
 - Loading skeletons for Today and Habit Detail.
 - Avoid long celebratory animations for every completion.
 - Use stronger celebration only for milestones.
+- Respect Reduce Motion. Never use motion as the only way to communicate state.
 
 ## Accessibility Rules
 
-- Minimum touch target: 44 x 44.
-- Support Dynamic Type.
-- Support screen reader labels.
-- Never communicate state by color alone.
-- Destructive actions need confirmation.
-- Charts need text summaries.
+- Target WCAG 2.2 Level AA as the product baseline.
+- Default iOS touch target: 44 x 44 pt. Do not go below 28 x 28 pt.
+- Keep visible text at 11 pt or larger. Support Dynamic Type and verify layouts
+  with Larger Accessibility Text Sizes enabled.
+- Small text needs at least 4.5:1 contrast. Large or bold text needs at least
+  3:1. Meaningful non-text controls and boundaries need at least 3:1.
+- Use dark `onAccent` content on bright custom accents. Primary reading text
+  remains white on the solid dark background.
+- Give interactive controls a useful accessibility label, role, and state.
+- Never communicate state by color alone. Pair color with text, icons, shapes,
+  or another persistent indicator.
+- Destructive actions need explicit labels and confirmation.
+- Charts need a visible text summary, visible values, and accessibility labels
+  for individual data points.
+- Progress bars need an accessibility label and numeric value.
+- Status changes should remain visible and use polite announcements when they
+  change without moving focus.
+- For async work, render content or placeholders immediately. Use determinate
+  progress when the duration is measurable and indeterminate progress when it
+  is not. Never leave a blank screen while loading.
+
+## Native Accessibility Verification
+
+Before release, test the iOS build with Accessibility Inspector, VoiceOver,
+Full Keyboard Access, Switch Control, Larger Accessibility Text Sizes, Bold
+Text, Increase Contrast, and Reduce Motion. Web rendering and static checks
+cannot certify native assistive-technology behavior.
 
 ## Glass surfaces
 
@@ -343,13 +369,12 @@ screen heroes. Defaults:
 
 - Horizontal glass bar fixed to the **bottom** of the screen (full width with side margins).
 - Use `variant="nav"` on the bottom bar for stronger frost (no heavy drop shadow).
-- Active tab: purple icon on soft circular glow; pill background on the tab cell.
+- Active tab: filled white icon. Inactive tabs use white outline icons.
 
 ### Date selector (active day)
 
 - Inactive days: uniform thin `glassBorder` on the glass pill.
-- Active day: purple label text plus **thick glowing vertical bars** on the left
-  and right edges only (not a full purple outline).
+- Active day: off-white label text with a charcoal selected fill.
 
 ### Glass variants (`GlassSurface`)
 

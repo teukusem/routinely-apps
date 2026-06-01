@@ -1,20 +1,14 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GlassSurface } from '../components/GlassSurface';
+import { Icon } from '../components/shared/Icon';
+import { tabIcons } from '../components/shared/iconPresets';
 import { appTabs } from '../data/routinely';
+import { iconAccentPair } from '../theme/iconColors';
 import { colors } from '../theme/colors';
 import { radius, spacing } from '../theme/spacing';
 import type { AppTab } from '../types/routinely';
-
-const tabIcons: Record<AppTab, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
-  Dashboard: { active: 'grid', inactive: 'grid-outline' },
-  Habits: { active: 'repeat', inactive: 'repeat-outline' },
-  Mood: { active: 'happy', inactive: 'happy-outline' },
-  Notes: { active: 'document-text', inactive: 'document-text-outline' },
-  Analytics: { active: 'stats-chart', inactive: 'bar-chart-outline' },
-};
 
 const tabLabels: Record<AppTab, string> = {
   Dashboard: 'Home',
@@ -44,24 +38,28 @@ export function BottomNav({ activeTab, onChangeTab }: BottomNavProps) {
         {appTabs.map((tab) => {
           const active = activeTab === tab;
           const icons = tabIcons[tab];
+          const accentColor = iconAccentPair(icons.accent).icon;
 
           return (
             <Pressable
-              accessibilityLabel={`Open ${tab}`}
+              accessibilityLabel={`Open ${tabLabels[tab]}`}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
               key={tab}
               onPress={() => onChangeTab(tab)}
               style={({ pressed }) => [styles.tabButton, pressed && styles.tabButtonPressed]}
             >
-              <View style={[styles.tabIconWrap, active && styles.tabIconWrapActive]}>
-                <Ionicons
-                  color={active ? colors.onAccent : colors.textMuted}
+              <View style={[styles.tabIconWrap, active && { backgroundColor: iconAccentPair(icons.accent).soft }]}>
+                <Icon
+                  color={active ? accentColor : colors.textMuted}
                   name={active ? icons.active : icons.inactive}
                   size={active ? 17 : 18}
                 />
               </View>
-              <Text numberOfLines={1} style={[styles.tabLabel, active && styles.tabLabelActive]}>
+              <Text
+                numberOfLines={1}
+                style={[styles.tabLabel, active && { color: accentColor, fontWeight: '800' }]}
+              >
                 {tabLabels[tab]}
               </Text>
             </Pressable>
@@ -102,7 +100,6 @@ const styles = StyleSheet.create({
   },
   tabButtonPressed: {
     opacity: 0.82,
-    transform: [{ scale: 0.96 }],
   },
   tabIconWrap: {
     alignItems: 'center',
@@ -111,18 +108,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 30,
   },
-  tabIconWrapActive: {
-    backgroundColor: colors.primary,
-  },
   tabLabel: {
     color: colors.textMuted,
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '700',
     lineHeight: 11,
     textAlign: 'center',
-  },
-  tabLabelActive: {
-    color: colors.text,
-    fontWeight: '800',
   },
 });

@@ -1,19 +1,21 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View, type DimensionValue } from 'react-native';
 
 import { mapBarsToFillPercentages } from './shared/analytics-bars-data';
 import { GlassSurface } from './GlassSurface';
+import { Icon, IconBadge } from './shared/Icon';
 import { MetricCard } from './shared/MetricCard';
 import { Panel } from './shared/Panel';
 import { ProgressBar } from './shared/ProgressBar';
 import { SectionHeader } from './shared/SectionHeader';
 import { colors } from '../theme/colors';
+import { iconColors } from '../theme/iconColors';
 import { radius, spacing } from '../theme/spacing';
 import type { AnalyticsBar, NotePreview } from '../types/routinely';
 
 export { DashboardHero } from './dashboard/DashboardHero';
 export { EmptyState } from './shared/EmptyState';
 export { HabitCard } from './habits/HabitCard';
+export { Icon, IconBadge, iconColors, iconSizes, type IconAccentName, type IconName, type IconSize, type IconTone } from './shared/Icon';
 export { MetricCard } from './shared/MetricCard';
 export { Panel } from './shared/Panel';
 export { ProgressBar } from './shared/ProgressBar';
@@ -35,6 +37,7 @@ export function AppHeader({ onPressProfile, profileInitials = 'T', subcopy = 'Da
       <Pressable
         accessibilityLabel="Open profile settings"
         accessibilityRole="button"
+        accessibilityState={{ disabled: !onPressProfile }}
         disabled={!onPressProfile}
         onPress={onPressProfile}
         style={({ pressed }) => [
@@ -106,10 +109,10 @@ export function MoodSelector({
 
 function getNoteLinkStyle(linkedTo: string) {
   if (linkedTo.toLowerCase().includes('mood')) {
-    return { backgroundColor: colors.wellnessSoft, tone: colors.wellness };
+    return { accent: 'rose' as const, backgroundColor: iconColors.roseSoft, tone: iconColors.rose };
   }
 
-  return { backgroundColor: colors.primarySoft, tone: colors.primary };
+  return { accent: 'sky' as const, backgroundColor: iconColors.skySoft, tone: iconColors.sky };
 }
 
 export function NoteCard({
@@ -119,15 +122,49 @@ export function NoteCard({
 }: {
   note: NotePreview;
   onPress?: () => void;
-  variant?: 'default' | 'prominent';
+  variant?: 'compact' | 'default' | 'prominent';
 }) {
   const linkStyle = getNoteLinkStyle(note.linkedTo);
+  const compact = variant === 'compact';
   const prominent = variant === 'prominent';
+
+  if (compact) {
+    return (
+      <Pressable
+        accessibilityHint={onPress ? `Linked to ${note.linkedTo}` : undefined}
+        accessibilityLabel={onPress ? `Open note ${note.title}, linked to ${note.linkedTo}` : undefined}
+        accessibilityRole={onPress ? 'button' : undefined}
+        disabled={!onPress}
+        onPress={onPress}
+        style={({ pressed }) => [onPress && pressed && styles.noteCardPressed]}
+      >
+        <GlassSurface borderRadius={radius.md} noPadding overflowHidden variant="nested">
+          <View style={[styles.noteRowCompact, { backgroundColor: linkStyle.backgroundColor }]}>
+            <IconBadge
+              accent={linkStyle.accent}
+              badgeSize={32}
+              name="newspaper-outline"
+              size="sm"
+            />
+            <View style={styles.noteCopyCompact}>
+              <Text ellipsizeMode="tail" numberOfLines={1} style={styles.noteTitleCompact}>
+                {note.title}
+              </Text>
+              <Text ellipsizeMode="tail" numberOfLines={1} style={styles.noteMetaCompact}>
+                {note.body} · {note.linkedTo}
+              </Text>
+            </View>
+            <Icon color={linkStyle.tone} name="chevron-forward" size={14} />
+          </View>
+        </GlassSurface>
+      </Pressable>
+    );
+  }
 
   return (
     <Pressable
-      accessibilityLabel={`Open note ${note.title}, linked to ${note.linkedTo}`}
-      accessibilityRole="button"
+      accessibilityLabel={onPress ? `Open note ${note.title}, linked to ${note.linkedTo}` : undefined}
+      accessibilityRole={onPress ? 'button' : undefined}
       disabled={!onPress}
       onPress={onPress}
       style={({ pressed }) => [onPress && pressed && styles.noteCardPressed]}
@@ -146,9 +183,13 @@ export function NoteCard({
           ]}
         >
           <View style={[styles.noteAccent, prominent && styles.noteAccentProminent, { backgroundColor: linkStyle.tone }]} />
-          <View style={[styles.noteIcon, prominent && styles.noteIconProminent, { backgroundColor: linkStyle.tone }]}>
-            <Ionicons color={colors.onAccent} name="document-text" size={prominent ? 16 : 14} />
-          </View>
+          <IconBadge
+            accent={linkStyle.accent}
+            badgeSize={prominent ? 40 : 36}
+            name="newspaper"
+            size={prominent ? 'md' : 'sm'}
+            style={prominent ? styles.noteIconProminent : styles.noteIcon}
+          />
           <View style={styles.noteCopy}>
             <Text numberOfLines={prominent ? 2 : 1} style={[styles.noteTitle, prominent && styles.noteTitleProminent]}>
               {note.title}
@@ -157,13 +198,13 @@ export function NoteCard({
               {note.body}
             </Text>
             <View style={[styles.linkChip, prominent && styles.linkChipProminent, { backgroundColor: colors.glassStrong }]}>
-              <Ionicons color={linkStyle.tone} name="link" size={prominent ? 12 : 11} />
+              <Icon color={linkStyle.tone} name="git-network-outline" size={prominent ? 12 : 11} />
               <Text numberOfLines={1} style={[styles.linkChipText, prominent && styles.linkChipTextProminent, { color: linkStyle.tone }]}>
                 {note.linkedTo}
               </Text>
             </View>
           </View>
-          <Ionicons color={linkStyle.tone} name="chevron-forward" size={prominent ? 18 : 16} />
+          <Icon color={linkStyle.tone} name="chevron-forward" size={prominent ? 'lg' : 'md'} />
         </View>
       </GlassSurface>
     </Pressable>
@@ -196,7 +237,13 @@ export function AnalyticsBars({
           const isBest = highlightBestBar && bar.value === bestValue;
 
           return (
-            <View key={bar.label} style={styles.barColumn}>
+            <View
+              accessible
+              accessibilityLabel={`${bar.label}: ${Math.round(bar.value * 100)}%${isBest ? ', best result' : ''}`}
+              accessibilityRole="text"
+              key={bar.label}
+              style={styles.barColumn}
+            >
               <View style={[styles.barTrack, isBest && styles.barTrackBest]}>
                 <View
                   style={[
@@ -209,6 +256,7 @@ export function AnalyticsBars({
                   ]}
                 />
               </View>
+              <Text style={styles.barValue}>{Math.round(bar.value * 100)}%</Text>
               <Text style={[styles.barLabel, isBest && styles.barLabelBest]}>{bar.label}</Text>
             </View>
           );
@@ -276,7 +324,6 @@ const styles = StyleSheet.create({
   },
   avatarButtonPressed: {
     opacity: 0.86,
-    transform: [{ scale: 0.96 }],
   },
   avatarText: {
     color: colors.text,
@@ -310,7 +357,6 @@ const styles = StyleSheet.create({
   },
   moodButtonPressed: {
     opacity: 0.88,
-    transform: [{ scale: 0.98 }],
   },
   moodEmoji: {
     fontSize: 18,
@@ -318,7 +364,7 @@ const styles = StyleSheet.create({
   },
   moodLabel: {
     color: colors.textMuted,
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
     lineHeight: 12,
   },
@@ -335,7 +381,31 @@ const styles = StyleSheet.create({
   },
   noteCardPressed: {
     opacity: 0.9,
-    transform: [{ scale: 0.99 }],
+  },
+  noteRowCompact: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    minWidth: 0,
+    paddingHorizontal: spacing.sm + 4,
+    paddingVertical: spacing.sm,
+  },
+  noteCopyCompact: {
+    flex: 1,
+    gap: 1,
+    minWidth: 0,
+  },
+  noteTitleCompact: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 16,
+  },
+  noteMetaCompact: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: '500',
+    lineHeight: 14,
   },
   noteRow: {
     alignItems: 'center',
@@ -358,16 +428,10 @@ const styles = StyleSheet.create({
     width: 5,
   },
   noteIcon: {
-    alignItems: 'center',
-    borderRadius: radius.pill,
     flexShrink: 0,
-    height: 36,
-    justifyContent: 'center',
-    width: 36,
   },
   noteIconProminent: {
-    height: 40,
-    width: 40,
+    flexShrink: 0,
   },
   noteCopy: {
     flex: 1,
@@ -415,7 +479,7 @@ const styles = StyleSheet.create({
   },
   linkChipText: {
     flexShrink: 1,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     lineHeight: 13,
   },
@@ -427,7 +491,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     flexDirection: 'row',
     gap: spacing.sm,
-    height: 160,
+    height: 176,
     justifyContent: 'space-between',
   },
   barColumn: {
@@ -455,6 +519,11 @@ const styles = StyleSheet.create({
   },
   barLabel: {
     color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  barValue: {
+    color: colors.text,
     fontSize: 11,
     fontWeight: '800',
   },

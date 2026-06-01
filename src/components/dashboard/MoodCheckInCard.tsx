@@ -1,8 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { GlassSurface } from '../GlassSurface';
 import { MoodSelector } from '../RoutinelyUI';
+import { IconBadge } from '../shared/Icon';
 import { ProgressBar } from '../shared/ProgressBar';
 import { colors } from '../../theme/colors';
 import { radius, spacing } from '../../theme/spacing';
@@ -45,9 +45,7 @@ export function MoodCheckInCard({
   return (
     <View style={styles.root}>
       <View style={styles.promptRow}>
-        <View style={styles.promptIcon}>
-          <Ionicons color={colors.wellness} name="happy-outline" size={16} />
-        </View>
+        <IconBadge accent="rose" badgeSize={28} name="heart-circle-outline" />
         <Text style={styles.promptText}>{promptText}</Text>
       </View>
 
@@ -99,7 +97,7 @@ function ScaleChip({
         <Text style={styles.scaleChipLabel}>{label}</Text>
         <Text style={styles.scaleChipValue}>{valueLabel}</Text>
       </View>
-      <ProgressBar accent={tone} value={value} />
+      <ProgressBar accent={tone} label={`${label} level`} value={value} />
     </View>
   );
 }
@@ -112,14 +110,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.sm,
-  },
-  promptIcon: {
-    alignItems: 'center',
-    backgroundColor: colors.wellnessSoft,
-    borderRadius: radius.pill,
-    height: 28,
-    justifyContent: 'center',
-    width: 28,
   },
   promptText: {
     color: colors.textMuted,
@@ -148,7 +138,7 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     color: colors.wellness,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     lineHeight: 13,
     textTransform: 'uppercase',
@@ -176,13 +166,13 @@ const styles = StyleSheet.create({
   },
   scaleChipLabel: {
     color: colors.textMuted,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     lineHeight: 13,
   },
   scaleChipValue: {
     color: colors.text,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     lineHeight: 13,
   },

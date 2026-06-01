@@ -347,11 +347,20 @@ UX rules:
 
 ## Accessibility
 
-- Minimum 44px tap targets.
-- Dynamic text support.
-- Screen reader labels for complete buttons and charts.
-- Color must not be the only status indicator.
+- WCAG 2.2 Level AA is the product baseline.
+- Default iOS tap targets are at least 44 x 44 pt.
+- Dynamic Type layouts remain readable with Larger Accessibility Text Sizes.
+- Visible text is at least 11 pt. Small text meets 4.5:1 contrast and
+  meaningful non-text boundaries meet 3:1.
+- Screen reader labels, roles, and states are provided for interactive
+  controls, progress bars, and chart data points.
+- Charts include visible summaries and values.
+- Color is never the only status indicator.
+- Loading states show immediate placeholders or progress feedback instead of
+  blank screens.
 - All destructive actions require clear confirmation.
+- Release verification includes Accessibility Inspector, VoiceOver, Full
+  Keyboard Access, Switch Control, Increase Contrast, and Reduce Motion.
 
 ## Frontend Acceptance Criteria
 

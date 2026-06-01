@@ -1,10 +1,11 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { GlassSurface } from '../components/GlassSurface';
-import { AppHeader, getNoteLinkStyle, NoteCard, Panel, SectionHeader, sharedStyles } from '../components/RoutinelyUI';
+import { AppHeader, NoteCard, Panel, SectionHeader, sharedStyles } from '../components/RoutinelyUI';
+import { Icon, IconBadge } from '../components/shared/Icon';
+import { NoteDetailContent } from '../components/shared/NoteDetailContent';
 import { RoutinelySheetModal } from '../components/shared/RoutinelySheetModal';
 import { colors } from '../theme/colors';
 import { radius, spacing } from '../theme/spacing';
@@ -99,7 +100,7 @@ export function NotesScreen({ notes, onCreateNote, onOpenProfile, onOverlayOpenC
               <Text style={styles.title}>Notes</Text>
               <Text style={styles.subtitle}>Short reflections connected to what actually happened.</Text>
               <View style={styles.heroMetaRow}>
-                <Ionicons color={colors.focus} name="lock-closed-outline" size={11} />
+                <Icon accent="teal" name="shield-checkmark-outline" size="xs" />
                 <Text style={styles.heroMeta}>Private · only you</Text>
               </View>
             </View>
@@ -114,9 +115,7 @@ export function NotesScreen({ notes, onCreateNote, onOpenProfile, onOverlayOpenC
           <View style={styles.panelStack}>
             <View style={styles.toolbarRow}>
               <View style={styles.promptRow}>
-                <View style={styles.promptIcon}>
-                  <Ionicons color={colors.primary} name="book-outline" size={15} />
-                </View>
+                <IconBadge accent="lavender" badgeSize={28} name="newspaper-outline" size={15} />
                 <Text style={styles.promptText}>Reflections tied to habits and mood</Text>
               </View>
               <Pressable
@@ -125,14 +124,15 @@ export function NotesScreen({ notes, onCreateNote, onOpenProfile, onOverlayOpenC
                 onPress={openCreateSheet}
                 style={({ pressed }) => [styles.createButton, pressed && styles.createButtonPressed]}
               >
-                <Ionicons color={colors.onAccent} name="add" size={15} />
+                <Icon accent="mint" name="add-circle" size={16} />
                 <Text style={styles.createText}>Create</Text>
               </Pressable>
             </View>
 
             <GlassSurface borderRadius={radius.md} contentStyle={styles.searchContent} style={styles.searchBox} variant="nested">
-              <Ionicons color={isSearching ? colors.primary : colors.textMuted} name="search" size={18} />
+              <Icon accent={isSearching ? 'sky' : undefined} color={isSearching ? undefined : colors.textMuted} name="search" size="lg" />
               <TextInput
+                accessibilityLabel="Search reflections and habit notes"
                 onChangeText={setQuery}
                 placeholder="Search reflections and habit notes"
                 placeholderTextColor={colors.textMuted}
@@ -140,8 +140,14 @@ export function NotesScreen({ notes, onCreateNote, onOpenProfile, onOverlayOpenC
                 value={query}
               />
               {isSearching ? (
-                <Pressable accessibilityLabel="Clear search" accessibilityRole="button" hitSlop={8} onPress={clearSearch}>
-                  <Ionicons color={colors.textMuted} name="close-circle" size={18} />
+                <Pressable
+                  accessibilityLabel="Clear search"
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  onPress={clearSearch}
+                  style={styles.clearSearchButton}
+                >
+                  <Icon accent="coral" name="close-circle" size="lg" />
                 </Pressable>
               ) : null}
             </GlassSurface>
@@ -155,13 +161,12 @@ export function NotesScreen({ notes, onCreateNote, onOpenProfile, onOverlayOpenC
             {filteredNotes.length === 0 ? (
               <GlassSurface borderRadius={radius.md} variant="nested">
                 <View style={styles.emptyState}>
-                  <View style={styles.emptyIcon}>
-                    <Ionicons
-                      color={colors.primary}
-                      name={isSearching ? 'search-outline' : 'document-text-outline'}
-                      size={22}
-                    />
-                  </View>
+                  <IconBadge
+                    accent={isSearching ? 'sky' : 'lavender'}
+                    badgeSize={40}
+                    name={isSearching ? 'search-circle-outline' : 'newspaper-outline'}
+                    size="xl"
+                  />
                   <Text style={styles.emptyTitle}>{isSearching ? 'No matching notes' : 'No notes yet'}</Text>
                   <Text style={styles.emptyText}>
                     {isSearching
@@ -205,10 +210,13 @@ export function NotesScreen({ notes, onCreateNote, onOpenProfile, onOverlayOpenC
         contentStyle={styles.sheetContent}
         footer={
           <View style={styles.sheetActions}>
-            <Pressable onPress={closeCreateSheet} style={styles.cancelButton}>
+            <Pressable accessibilityLabel="Cancel creating note" accessibilityRole="button" onPress={closeCreateSheet} style={styles.cancelButton}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </Pressable>
             <Pressable
+              accessibilityLabel="Create note"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: newTitle.trim().length === 0 || newBody.trim().length === 0 }}
               disabled={newTitle.trim().length === 0 || newBody.trim().length === 0}
               onPress={submitCreateNote}
               style={[styles.submitButton, (newTitle.trim().length === 0 || newBody.trim().length === 0) && styles.submitButtonDisabled]}
@@ -222,7 +230,7 @@ export function NotesScreen({ notes, onCreateNote, onOpenProfile, onOverlayOpenC
         <View style={styles.sheetHeader}>
           <Text style={styles.sheetTitle}>New note</Text>
           <View style={styles.sheetMetaRow}>
-            <Ionicons color={colors.focus} name="lock-closed-outline" size={12} />
+            <Icon accent="teal" name="shield-checkmark-outline" size={12} />
             <Text style={styles.sheetMeta}>Only visible to you</Text>
           </View>
         </View>
@@ -231,6 +239,7 @@ export function NotesScreen({ notes, onCreateNote, onOpenProfile, onOverlayOpenC
           <Text style={styles.inputLabel}>Title</Text>
           <GlassSurface borderRadius={radius.lg} contentStyle={styles.inputSurfaceContent} variant="nested">
             <TextInput
+              accessibilityLabel="Note title"
               onChangeText={setNewTitle}
               placeholder="e.g. Why I skipped hydration"
               placeholderTextColor={colors.textMuted}
@@ -244,6 +253,7 @@ export function NotesScreen({ notes, onCreateNote, onOpenProfile, onOverlayOpenC
           <Text style={styles.inputLabel}>Note</Text>
           <GlassSurface borderRadius={radius.lg} contentStyle={styles.bodySurfaceContent} variant="nested">
             <TextInput
+              accessibilityLabel="Note body"
               multiline
               onChangeText={setNewBody}
               placeholder="Write quick reflection..."
@@ -261,7 +271,7 @@ export function NotesScreen({ notes, onCreateNote, onOpenProfile, onOverlayOpenC
         contentKey={selectedNote?.id}
         contentStyle={styles.sheetContent}
         footer={
-          <Pressable onPress={closeDetailSheet} style={styles.closeDetailButton}>
+          <Pressable accessibilityLabel="Close note detail" accessibilityRole="button" onPress={closeDetailSheet} style={styles.closeDetailButton}>
             <Text style={styles.closeDetailButtonText}>Close</Text>
           </Pressable>
         }
@@ -269,34 +279,6 @@ export function NotesScreen({ notes, onCreateNote, onOpenProfile, onOverlayOpenC
       >
         {selectedNote ? <NoteDetailContent note={selectedNote} /> : null}
       </RoutinelySheetModal>
-    </>
-  );
-}
-
-function NoteDetailContent({ note }: { note: NotePreview }) {
-  const linkStyle = getNoteLinkStyle(note.linkedTo);
-
-  return (
-    <>
-      <View style={styles.sheetHeader}>
-        <Text style={styles.sheetTitle}>{note.title}</Text>
-        <View style={styles.sheetMetaRow}>
-          <Ionicons color={colors.focus} name="lock-closed-outline" size={12} />
-          <Text style={styles.sheetMeta}>Only visible to you</Text>
-        </View>
-      </View>
-
-      <View style={[styles.detailLinkChip, { backgroundColor: linkStyle.backgroundColor }]}>
-        <Ionicons color={linkStyle.tone} name="link" size={12} />
-        <Text style={[styles.detailLinkChipText, { color: linkStyle.tone }]}>
-          Linked to {note.linkedTo}
-        </Text>
-      </View>
-
-      <GlassSurface borderRadius={radius.lg} contentStyle={styles.detailBodyContent} variant="nested">
-        <Text style={styles.detailBodyLabel}>Note</Text>
-        <Text style={styles.detailBodyText}>{note.body}</Text>
-      </GlassSurface>
     </>
   );
 }
@@ -342,7 +324,7 @@ const styles = StyleSheet.create({
     borderColor: colors.glassBorder,
     borderRadius: radius.pill,
     borderWidth: 1,
-    minHeight: 36,
+    minHeight: 44,
     paddingHorizontal: spacing.sm + 2,
     paddingVertical: spacing.xs,
   },
@@ -361,7 +343,7 @@ const styles = StyleSheet.create({
   },
   statusLabel: {
     color: colors.textMuted,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     lineHeight: 13,
     textTransform: 'uppercase',
@@ -382,15 +364,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     minWidth: 0,
   },
-  promptIcon: {
-    alignItems: 'center',
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.pill,
-    flexShrink: 0,
-    height: 28,
-    justifyContent: 'center',
-    width: 28,
-  },
   promptText: {
     color: colors.textMuted,
     flex: 1,
@@ -405,17 +378,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexShrink: 0,
     gap: spacing.xs,
+    justifyContent: 'center',
     minHeight: 36,
-    paddingHorizontal: spacing.sm + 2,
+    paddingHorizontal: spacing.sm + 4,
+    paddingVertical: spacing.xs + 2,
   },
   createButtonPressed: {
     opacity: 0.88,
-    transform: [{ scale: 0.98 }],
   },
   createText: {
     color: colors.onAccent,
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '800',
+    includeFontPadding: false,
+    lineHeight: 16,
   },
   searchBox: {
     minHeight: 48,
@@ -436,6 +412,12 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     textAlignVertical: 'center',
   },
+  clearSearchButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    minWidth: 44,
+  },
   noteList: {
     gap: spacing.md,
   },
@@ -444,14 +426,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.lg,
-  },
-  emptyIcon: {
-    alignItems: 'center',
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.pill,
-    height: 40,
-    justifyContent: 'center',
-    width: 40,
   },
   emptyTitle: {
     color: colors.text,
@@ -467,7 +441,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   emptyAction: {
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: spacing.xs,
+    minHeight: 44,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },
@@ -515,7 +492,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   inputSurfaceContent: {
-    height: 48,
+    minHeight: 48,
     justifyContent: 'center',
     paddingHorizontal: spacing.md,
   },

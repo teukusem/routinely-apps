@@ -1,21 +1,25 @@
-import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { IconBadge, type IconName } from './Icon';
 import { colors } from '../../theme/colors';
 import { radius, spacing } from '../../theme/spacing';
 
 type EmptyStateProps = {
+  accent?: 'lavender' | 'mint' | 'sky' | 'violet';
   description: string;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: IconName;
   title: string;
 };
 
-export function EmptyState({ description, icon = 'file-tray-outline', title }: EmptyStateProps) {
+export function EmptyState({
+  accent = 'lavender',
+  description,
+  icon = 'planet-outline',
+  title,
+}: EmptyStateProps) {
   return (
     <View style={styles.wrap}>
-      <View style={styles.iconWrap}>
-        <Ionicons color={colors.textMuted} name={icon} size={18} />
-      </View>
+      <IconBadge accent={accent} badgeSize={34} name={icon} size="lg" />
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.description}>{description}</Text>
     </View>
@@ -32,14 +36,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.lg,
-  },
-  iconWrap: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radius.pill,
-    height: 34,
-    justifyContent: 'center',
-    width: 34,
   },
   title: {
     color: colors.text,

@@ -1,7 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { GlassSurface } from '../GlassSurface';
+import { IconBadge } from '../shared/Icon';
 import { colors } from '../../theme/colors';
 import { radius, spacing } from '../../theme/spacing';
 import type { DailyHabitView } from '../../types/routinely';
@@ -15,9 +15,7 @@ export function UpcomingRemindersCard({ habits }: UpcomingRemindersCardProps) {
     return (
       <GlassSurface borderRadius={radius.md} variant="nested">
         <View style={styles.emptyState}>
-          <View style={styles.emptyIcon}>
-            <Ionicons color={colors.success} name="checkmark-circle" size={22} />
-          </View>
+          <IconBadge accent="mint" badgeSize={40} name="shield-checkmark" size="xl" />
           <Text style={styles.emptyTitle}>You’re clear for now</Text>
           <Text style={styles.emptyText}>No due or upcoming reminders on this date.</Text>
         </View>
@@ -41,9 +39,7 @@ function ReminderRow({ habit }: { habit: DailyHabitView }) {
     <GlassSurface borderRadius={radius.md} noPadding overflowHidden variant="nested">
       <View style={[styles.reminderRow, isDue && styles.reminderRowDue]}>
         <View style={[styles.reminderAccent, { backgroundColor: habit.accent }]} />
-        <View style={[styles.reminderIcon, { backgroundColor: habit.accent }]}>
-          <Ionicons color={colors.onAccent} name="notifications" size={14} />
-        </View>
+        <IconBadge badgeColor={habit.accent} badgeSize={32} color={colors.onAccent} name="alarm-outline" size="sm" />
         <View style={styles.reminderCopy}>
           <View style={styles.reminderTitleRow}>
             <Text numberOfLines={1} style={styles.reminderTitle}>
@@ -57,7 +53,6 @@ function ReminderRow({ habit }: { habit: DailyHabitView }) {
             {habit.scheduleLabel} · {habit.reminderLabel}
           </Text>
         </View>
-        <Ionicons color={isDue ? colors.focus : colors.textMuted} name="chevron-forward" size={16} />
       </View>
     </GlassSurface>
   );
@@ -72,14 +67,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-  },
-  emptyIcon: {
-    alignItems: 'center',
-    backgroundColor: colors.successSoft,
-    borderRadius: radius.pill,
-    height: 40,
-    justifyContent: 'center',
-    width: 40,
   },
   emptyTitle: {
     color: colors.text,
@@ -108,14 +95,6 @@ const styles = StyleSheet.create({
   reminderAccent: {
     alignSelf: 'stretch',
     width: 3,
-  },
-  reminderIcon: {
-    alignItems: 'center',
-    borderRadius: radius.pill,
-    flexShrink: 0,
-    height: 32,
-    justifyContent: 'center',
-    width: 32,
   },
   reminderCopy: {
     flex: 1,
@@ -149,7 +128,7 @@ const styles = StyleSheet.create({
   },
   statusChipText: {
     color: colors.text,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     lineHeight: 13,
   },

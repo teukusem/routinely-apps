@@ -1,7 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { GlassSurface } from '../GlassSurface';
+import { Icon } from '../shared/Icon';
 import { ProgressBar } from '../shared/ProgressBar';
 import { colors } from '../../theme/colors';
 import { radius, spacing } from '../../theme/spacing';
@@ -26,7 +26,7 @@ export function DashboardHero({
       <View style={styles.heroTopRow}>
         <Text style={styles.heroKicker}>{selectedDateLabel}</Text>
         <View style={[styles.heroSignal, styles.innerSurface]}>
-          <Ionicons color={colors.text} name="flash" size={13} />
+          <Icon accent="amber" name="rocket" size={13} />
           <Text style={styles.heroSignalText}>Focus</Text>
         </View>
       </View>
@@ -38,12 +38,12 @@ export function DashboardHero({
         <View style={styles.heroProgress}>
           <View style={styles.heroProgressHeader}>
             <View style={styles.heroProgressLabelRow}>
-              <Ionicons color={colors.primary} name="checkmark-circle" size={14} />
+              <Icon accent="mint" name="ribbon" size="sm" />
               <Text style={styles.heroProgressLabel}>Completed</Text>
             </View>
             <Text style={styles.heroProgressValue}>{completionRate}%</Text>
           </View>
-          <ProgressBar accent={colors.primary} value={completionRate / 100} />
+          <ProgressBar accent={colors.primary} label="Daily completion" value={completionRate / 100} />
         </View>
         <View style={styles.heroHint}>
           <Text style={styles.heroHintValue}>Next</Text>

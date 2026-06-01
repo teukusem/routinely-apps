@@ -1,8 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { GlassSurface } from '../GlassSurface';
 import { NoteCard } from '../RoutinelyUI';
+import { IconBadge } from '../shared/Icon';
 import { colors } from '../../theme/colors';
 import { radius, spacing } from '../../theme/spacing';
 import type { NotePreview } from '../../types/routinely';
@@ -17,11 +17,11 @@ export function RecentReflectionsCard({ notes, onNotePress }: RecentReflectionsC
     return (
       <GlassSurface borderRadius={radius.md} variant="nested">
         <View style={styles.emptyState}>
-          <View style={styles.emptyIcon}>
-            <Ionicons color={colors.primary} name="create-outline" size={22} />
-          </View>
+          <IconBadge accent="lavender" badgeSize={32} name="sparkles" size="md" />
           <Text style={styles.emptyTitle}>No reflections yet</Text>
-          <Text style={styles.emptyText}>Jot down a quick note after a habit or mood check-in.</Text>
+          <Text numberOfLines={2} style={styles.emptyText}>
+            Jot down a quick note after a habit or mood check-in.
+          </Text>
         </View>
       </GlassSurface>
     );
@@ -30,10 +30,10 @@ export function RecentReflectionsCard({ notes, onNotePress }: RecentReflectionsC
   return (
     <View style={styles.root}>
       <View style={styles.promptRow}>
-        <View style={styles.promptIcon}>
-          <Ionicons color={colors.primary} name="book-outline" size={15} />
-        </View>
-        <Text style={styles.promptText}>Private notes tied to what you actually did today</Text>
+        <IconBadge accent="lavender" badgeSize={32} name="newspaper-outline" size="sm" />
+        <Text ellipsizeMode="tail" numberOfLines={1} style={styles.promptText}>
+          Private notes tied to what you actually did today
+        </Text>
       </View>
 
       <View style={styles.list}>
@@ -42,7 +42,7 @@ export function RecentReflectionsCard({ notes, onNotePress }: RecentReflectionsC
             key={note.id}
             note={note}
             onPress={onNotePress ? () => onNotePress(note) : undefined}
-            variant="prominent"
+            variant="compact"
           />
         ))}
       </View>
@@ -52,56 +52,40 @@ export function RecentReflectionsCard({ notes, onNotePress }: RecentReflectionsC
 
 const styles = StyleSheet.create({
   root: {
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   promptRow: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.sm,
   },
-  promptIcon: {
-    alignItems: 'center',
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.pill,
-    height: 28,
-    justifyContent: 'center',
-    width: 28,
-  },
   promptText: {
     color: colors.textMuted,
     flex: 1,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    lineHeight: 16,
+    lineHeight: 14,
   },
   list: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   emptyState: {
     alignItems: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  emptyIcon: {
-    alignItems: 'center',
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.pill,
-    height: 40,
-    justifyContent: 'center',
-    width: 40,
+    paddingVertical: spacing.sm + 4,
   },
   emptyTitle: {
     color: colors.text,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '800',
-    lineHeight: 18,
+    lineHeight: 16,
   },
   emptyText: {
     color: colors.textMuted,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
-    lineHeight: 16,
+    lineHeight: 15,
     textAlign: 'center',
   },
 });

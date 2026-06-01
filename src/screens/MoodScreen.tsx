@@ -1,9 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { GlassSurface } from '../components/GlassSurface';
 import { MoodCheckInCard } from '../components/dashboard/MoodCheckInCard';
 import { AnalyticsBars, AppHeader, moodEmojiForScore, Panel, sharedStyles } from '../components/RoutinelyUI';
+import { Icon } from '../components/shared/Icon';
 import { colors } from '../theme/colors';
 import { radius, spacing } from '../theme/spacing';
 import type { AnalyticsBar, MoodDetailView } from '../types/routinely';
@@ -40,7 +40,12 @@ export function MoodScreen({
             <Text style={styles.subtitle}>A quick signal, not a diary requirement.</Text>
             <Text style={styles.dateMeta}>{selectedDateLabel}</Text>
           </View>
-          <View style={[styles.statusPill, moodLogged && styles.statusPillLogged]}>
+          <View
+            accessible
+            accessibilityLabel={moodLogged ? `Mood logged: ${selectedMood} of 5` : 'Mood not logged'}
+            accessibilityLiveRegion="polite"
+            style={[styles.statusPill, moodLogged && styles.statusPillLogged]}
+          >
             {moodLogged ? (
               <>
                 <Text style={styles.statusEmoji}>{moodEmoji}</Text>
@@ -63,7 +68,7 @@ export function MoodScreen({
           />
           <GlassSurface borderRadius={radius.md} contentStyle={styles.noteContent} variant="nested">
             <View style={styles.noteHeader}>
-              <Ionicons color={colors.textMuted} name="lock-closed-outline" size={12} />
+              <Icon accent="teal" name="shield-checkmark-outline" size={12} />
               <Text style={styles.noteLabel}>Private note</Text>
             </View>
             <Text style={[styles.noteText, !hasNote && styles.notePlaceholder]}>
@@ -157,7 +162,7 @@ const styles = StyleSheet.create({
   },
   noteLabel: {
     color: colors.textMuted,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.4,
     lineHeight: 13,

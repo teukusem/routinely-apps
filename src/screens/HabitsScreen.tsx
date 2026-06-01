@@ -1,11 +1,13 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useRef, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ColorValue } from 'react-native';
 
 import { GlassSurface } from '../components/GlassSurface';
 import { HabitCard } from '../components/habits/HabitCard';
 import { AppHeader, EmptyState, sharedStyles } from '../components/RoutinelyUI';
+import { Icon, IconBadge, type IconAccentName, type IconName } from '../components/shared/Icon';
+import { settingsRowPresets } from '../components/shared/iconPresets';
+import { categoryIconPresets, timePeriodIconPresets } from '../components/shared/iconPresets';
 import { Panel } from '../components/shared/Panel';
 import { RoutinelySheetModal } from '../components/shared/RoutinelySheetModal';
 import { SectionHeader } from '../components/shared/SectionHeader';
@@ -170,7 +172,7 @@ export function HabitsScreen({
               <Text style={styles.title}>Routines</Text>
               <Text style={styles.subtitle}>Manage what repeats. Keep dashboard clean for doing, not configuring.</Text>
               <View style={styles.heroMetaRow}>
-                <Ionicons color={colors.primary} name="repeat" size={11} />
+                <Icon accent="mint" name="infinite" size="xs" />
                 <Text style={styles.heroMeta}>Daily habits & schedules</Text>
               </View>
             </View>
@@ -188,6 +190,7 @@ export function HabitsScreen({
             const selected = activeFilter === filter;
             return (
               <Pressable
+                accessibilityLabel={`Show ${filter} habits`}
                 key={filter}
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
@@ -208,9 +211,7 @@ export function HabitsScreen({
           <View style={styles.panelStack}>
             <View style={styles.panelHeaderRow}>
               <View style={styles.promptRow}>
-                <View style={styles.promptIcon}>
-                  <Ionicons color={colors.primary} name="layers-outline" size={15} />
-                </View>
+                <IconBadge accent="violet" badgeSize={28} name="albums-outline" size={15} />
                 <View style={styles.panelHeaderCopy}>
                   <SectionHeader title={`${activeFilter} habits`} meta={`${filteredHabits.length} shown`} compact />
                 </View>
@@ -221,7 +222,7 @@ export function HabitsScreen({
                 onPress={openCreateSheet}
                 style={({ pressed }) => [styles.createButton, pressed && styles.createButtonPressed]}
               >
-                <Ionicons color={colors.onAccent} name="add" size={15} />
+                <Icon accent="mint" name="add-circle" size={16} />
                 <Text style={styles.createButtonText}>Create</Text>
               </Pressable>
             </View>
@@ -237,8 +238,9 @@ export function HabitsScreen({
             ))}
             {filteredHabits.length === 0 ? (
               <EmptyState
+                accent="mint"
                 description="Create one to start tracking this filter."
-                icon="repeat-outline"
+                icon="infinite-outline"
                 title="No habits found"
               />
             ) : null}
@@ -279,7 +281,7 @@ export function HabitsScreen({
         onDismiss={handleSheetDismiss}
       >
         <SheetHeader
-          icon={sheetMode === 'create' ? 'add-circle-outline' : sheetMode === 'edit' ? 'create-outline' : 'repeat-outline'}
+          icon={sheetMode === 'create' ? 'add-circle-outline' : sheetMode === 'edit' ? 'color-wand-outline' : 'infinite-outline'}
           onClose={closeSheet}
           subtitle={
             sheetMode === 'create'
@@ -328,20 +330,9 @@ function toHabitCategory(category: string): HabitCategory {
   return 'General';
 }
 
-const categoryIcons: Record<HabitCategory, keyof typeof Ionicons.glyphMap> = {
-  General: 'apps-outline',
-  Health: 'heart-outline',
-  Learning: 'book-outline',
-  Mindfulness: 'leaf-outline',
-  Productivity: 'briefcase-outline',
-};
+const categoryIcons = categoryIconPresets;
 
-const timePeriodIcons: Record<TimePeriod, keyof typeof Ionicons.glyphMap> = {
-  Anytime: 'time-outline',
-  Afternoon: 'partly-sunny-outline',
-  Evening: 'moon-outline',
-  Morning: 'sunny-outline',
-};
+const timePeriodIcons = timePeriodIconPresets;
 
 function SheetHeader({
   icon,
@@ -349,7 +340,7 @@ function SheetHeader({
   subtitle,
   title,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
   onClose: () => void;
   subtitle: string;
   title: string;
@@ -358,7 +349,7 @@ function SheetHeader({
     <View style={styles.sheetHeader}>
       <View style={styles.sheetHeaderLeading}>
         <View style={styles.sheetHeaderIcon}>
-          <Ionicons color={colors.primary} name={icon} size={22} />
+          <Icon accent="violet" name={icon} size="xl" />
         </View>
         <View style={styles.sheetHeaderCopy}>
           <Text style={styles.sheetTitle}>{title}</Text>
@@ -374,7 +365,7 @@ function SheetHeader({
         onPress={onClose}
         style={({ pressed }) => [styles.sheetCloseButton, pressed && styles.sheetCloseButtonPressed]}
       >
-        <Ionicons color={colors.textMuted} name="close" size={20} />
+        <Icon accent="coral" name="close-circle-outline" size={20} />
       </Pressable>
     </View>
   );
@@ -401,6 +392,7 @@ function HabitFormFields({
         <Text style={styles.inputLabel}>Name</Text>
         <GlassSurface borderRadius={radius.lg} contentStyle={styles.inputSurfaceContent} variant="nested">
           <TextInput
+            accessibilityLabel="Habit name"
             autoCapitalize="sentences"
             onChangeText={onChangeName}
             placeholder="e.g. 30-minute coding practice"
@@ -417,8 +409,13 @@ function HabitFormFields({
         <View style={styles.optionRow}>
           {categoryOptions.map((option) => {
             const selected = category === option;
+            const preset = categoryIcons[option];
+
             return (
               <Pressable
+                accessibilityLabel={`Category ${option}`}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: selected }}
                 key={option}
                 onPress={() => onChangeCategory(option)}
                 style={({ pressed }) => [pressed && styles.optionPressed]}
@@ -433,10 +430,11 @@ function HabitFormFields({
                   ]}
                   variant="nested"
                 >
-                  <Ionicons
-                    color={selected ? colors.primary : colors.textMuted}
-                    name={categoryIcons[option]}
-                    size={14}
+                  <Icon
+                    accent={selected ? preset.accent : undefined}
+                    color={selected ? undefined : colors.textMuted}
+                    name={preset.name}
+                    size="sm"
                   />
                   <Text style={[styles.optionText, selected && styles.optionTextActive]}>{option}</Text>
                 </GlassSurface>
@@ -451,8 +449,13 @@ function HabitFormFields({
         <View style={styles.optionRow}>
           {timePeriodOptions.map((option) => {
             const selected = timePeriod === option;
+            const preset = timePeriodIcons[option];
+
             return (
               <Pressable
+                accessibilityLabel={`Time period ${option}`}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: selected }}
                 key={option}
                 onPress={() => onChangeTimePeriod(option)}
                 style={({ pressed }) => [pressed && styles.optionPressed]}
@@ -467,10 +470,11 @@ function HabitFormFields({
                   ]}
                   variant="nested"
                 >
-                  <Ionicons
-                    color={selected ? colors.primary : colors.textMuted}
-                    name={timePeriodIcons[option]}
-                    size={14}
+                  <Icon
+                    accent={selected ? preset.accent : undefined}
+                    color={selected ? undefined : colors.textMuted}
+                    name={preset.name}
+                    size="sm"
                   />
                   <Text style={[styles.optionText, selected && styles.optionTextActive]}>{option}</Text>
                 </GlassSurface>
@@ -497,12 +501,17 @@ function SheetFormActions({
   return (
     <View style={styles.sheetActions}>
       <Pressable
+        accessibilityLabel="Cancel habit changes"
+        accessibilityRole="button"
         onPress={onCancel}
         style={({ pressed }) => [styles.cancelButton, pressed && styles.secondaryButtonPressed]}
       >
         <Text style={styles.cancelButtonText}>Cancel</Text>
       </Pressable>
       <Pressable
+        accessibilityLabel={submitLabel}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: !canSubmit }}
         disabled={!canSubmit}
         onPress={onSubmit}
         style={({ pressed }) => [
@@ -530,16 +539,16 @@ function HabitDetailContent({ habit }: { habit: DailyHabitView }) {
           <Text style={styles.categoryBadgeText}>{habit.category}</Text>
         </View>
         <View style={styles.timeBadge}>
-          <Ionicons color={colors.textMuted} name="time-outline" size={11} />
+          <Icon accent="lavender" name="hourglass-outline" size="xs" />
           <Text style={styles.timeBadgeText}>{habit.timePeriod}</Text>
         </View>
       </View>
 
       <View style={styles.detailStatsGrid}>
-        <DetailStatCard icon="time-outline" label="Time" value={habit.timePeriod} />
-        <DetailStatCard icon="flag-outline" label="Target" value={`${habit.target} ${habit.unit}`} />
-        <DetailStatCard icon="flame-outline" label="Streak" tone={colors.warning} value={`${habit.streak} days`} />
-        <DetailStatCard icon="trending-up-outline" label="Progress" tone={colors.primary} value={`${habit.progress}/${habit.target}`} />
+        <DetailStatCard accent="lavender" icon="hourglass-outline" label="Time" value={habit.timePeriod} />
+        <DetailStatCard accent="sky" icon="flag" label="Target" value={`${habit.target} ${habit.unit}`} />
+        <DetailStatCard accent="coral" icon="flame" label="Streak" value={`${habit.streak} days`} />
+        <DetailStatCard accent="mint" icon="trending-up" label="Progress" value={`${habit.progress}/${habit.target}`} />
       </View>
     </View>
   );
@@ -557,20 +566,26 @@ function DetailSheetActions({
   return (
     <>
       <Pressable
+        accessibilityLabel="Edit habit"
+        accessibilityRole="button"
         onPress={onEdit}
         style={({ pressed }) => [styles.detailPrimaryButton, pressed && styles.submitButtonPressed]}
       >
-        <Ionicons color={colors.onAccent} name="create-outline" size={16} />
+        <Icon accent="sky" name="color-wand-outline" />
         <Text style={styles.submitButtonText}>Edit habit</Text>
       </Pressable>
       <Pressable
+        accessibilityLabel="Archive habit"
+        accessibilityRole="button"
         onPress={onArchive}
         style={({ pressed }) => [styles.detailDangerButton, pressed && styles.secondaryButtonPressed]}
       >
-        <Ionicons color={colors.danger} name="archive-outline" size={16} />
+        <Icon accent="coral" name="archive" />
         <Text style={styles.detailDangerButtonText}>Archive</Text>
       </Pressable>
       <Pressable
+        accessibilityLabel="Close habit detail"
+        accessibilityRole="button"
         onPress={onClose}
         style={({ pressed }) => [styles.detailGhostButton, pressed && styles.secondaryButtonPressed]}
       >
@@ -581,19 +596,19 @@ function DetailSheetActions({
 }
 
 function DetailStatCard({
+  accent,
   icon,
   label,
-  tone = colors.text,
   value,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  accent: IconAccentName;
+  icon: IconName;
   label: string;
-  tone?: ColorValue;
   value: string;
 }) {
   return (
     <GlassSurface borderRadius={radius.lg} style={styles.detailStatCard} variant="nested">
-      <Ionicons color={tone} name={icon} size={16} />
+      <Icon accent={accent} name={icon} />
       <Text style={styles.detailStatLabel}>{label}</Text>
       <Text numberOfLines={1} style={styles.detailStatValue}>
         {value}
@@ -687,7 +702,7 @@ const styles = StyleSheet.create({
   },
   statusLabel: {
     color: colors.textMuted,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     lineHeight: 13,
     textTransform: 'uppercase',
@@ -710,12 +725,15 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   filterBadge: {
+    alignItems: 'center',
     backgroundColor: colors.surfaceMuted,
     borderColor: colors.glassBorder,
     borderRadius: radius.pill,
     borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 36,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   filterBadgeActive: {
     backgroundColor: colors.primarySoft,
@@ -723,13 +741,14 @@ const styles = StyleSheet.create({
   },
   filterBadgePressed: {
     opacity: 0.88,
-    transform: [{ scale: 0.98 }],
   },
   filterText: {
     color: colors.textMuted,
     fontSize: 12,
     fontWeight: '800',
+    includeFontPadding: false,
     lineHeight: 16,
+    textAlignVertical: 'center',
   },
   filterTextActive: {
     color: colors.primary,
@@ -750,16 +769,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     minWidth: 0,
   },
-  promptIcon: {
-    alignItems: 'center',
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.pill,
-    flexShrink: 0,
-    height: 28,
-    justifyContent: 'center',
-    marginTop: 2,
-    width: 28,
-  },
   panelHeaderCopy: {
     flex: 1,
     minWidth: 0,
@@ -770,9 +779,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     flexDirection: 'row',
     gap: spacing.xs,
+    justifyContent: 'center',
     minHeight: 36,
     paddingHorizontal: spacing.sm + 4,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.xs + 2,
   },
   createButtonPressed: {
     backgroundColor: colors.primaryPressed,
@@ -780,8 +790,10 @@ const styles = StyleSheet.create({
   },
   createButtonText: {
     color: colors.onAccent,
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '800',
+    includeFontPadding: false,
+    lineHeight: 16,
   },
   sheetContent: {
     gap: spacing.md,
@@ -829,9 +841,9 @@ const styles = StyleSheet.create({
     borderColor: colors.glassBorder,
     borderRadius: radius.pill,
     borderWidth: 1,
-    height: 36,
+    height: 44,
     justifyContent: 'center',
-    width: 36,
+    width: 44,
   },
   sheetCloseButtonPressed: {
     opacity: 0.86,
@@ -850,7 +862,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   inputSurfaceContent: {
-    height: 48,
+    minHeight: 48,
     justifyContent: 'center',
     paddingHorizontal: spacing.md,
   },
@@ -874,7 +886,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.xs,
-    height: 38,
+    minHeight: 44,
     justifyContent: 'center',
     paddingHorizontal: spacing.md,
   },
@@ -1026,7 +1038,7 @@ const styles = StyleSheet.create({
   detailDangerButton: {
     alignItems: 'center',
     backgroundColor: colors.dangerSoft,
-    borderColor: 'rgba(248, 113, 113, 0.35)',
+    borderColor: colors.danger,
     borderRadius: radius.pill,
     borderWidth: 1,
     flexDirection: 'row',

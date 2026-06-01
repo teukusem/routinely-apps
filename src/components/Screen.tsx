@@ -2,7 +2,7 @@ import { PropsWithChildren } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
-import { AuroraBackground } from './AuroraBackground';
+import { SolidBackground } from './SolidBackground';
 import { spacing } from '../theme/spacing';
 
 type ScreenProps = PropsWithChildren<{
@@ -13,7 +13,7 @@ type ScreenProps = PropsWithChildren<{
 export function Screen({ children, padded = true, safeAreaEdges }: ScreenProps) {
   return (
     <View style={styles.root}>
-      <AuroraBackground />
+      <SolidBackground />
       <SafeAreaView edges={safeAreaEdges} style={styles.safeArea}>
         <View style={[styles.content, padded && styles.padded]}>{children}</View>
       </SafeAreaView>

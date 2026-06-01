@@ -275,6 +275,7 @@ export function AppNavigator() {
             onSelectMood: handleSelectMood,
             onToggleHabit: handleToggleHabit,
             onCreateHabit: handleCreateHabit,
+            onCreateHabitRequest: () => setActiveTab('Habits'),
             onArchiveHabit: handleArchiveHabit,
             onEditHabit: handleEditHabit,
             onCreateNote: handleCreateNote,
@@ -306,6 +307,7 @@ type RenderScreenArgs = {
   onSelectMood: (mood: number) => void;
   onToggleHabit: (habitId: string) => void;
   onCreateHabit: (draft: { name: string; category: string; timePeriod: TimePeriod }) => void;
+  onCreateHabitRequest: () => void;
   onArchiveHabit: (habitId: string) => void;
   onEditHabit: (draft: { habitId: string; name: string; category: string; timePeriod: TimePeriod }) => void;
   onCreateNote: (draft: { title: string; body: string }) => void;
@@ -332,6 +334,7 @@ function renderScreen({
   onSelectMood,
   onToggleHabit,
   onCreateHabit,
+  onCreateHabitRequest,
   onArchiveHabit,
   onEditHabit,
   onCreateNote,
@@ -355,7 +358,9 @@ function renderScreen({
           notes={noteItems}
           onSelectDate={onSelectDate}
           onSelectMood={onSelectMood}
+          onCreateHabitRequest={onCreateHabitRequest}
           onOpenProfile={onOpenProfile}
+          onOverlayOpenChange={onOverlayOpenChange}
           onToggleHabit={onToggleHabit}
           scheduleTitle={scheduleTitle}
           selectedDate={selectedDate}

@@ -1,8 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, StyleSheet, Text, View, type ColorValue } from 'react-native';
 
 import { GlassSurface } from '../components/GlassSurface';
 import { AnalyticsBars, AppHeader, MetricCard, Panel, SectionHeader, sharedStyles } from '../components/RoutinelyUI';
+import { Icon, IconBadge } from '../components/shared/Icon';
 import { ProgressBar } from '../components/shared/ProgressBar';
 import { colors } from '../theme/colors';
 import { radius, spacing } from '../theme/spacing';
@@ -36,7 +36,7 @@ export function AnalyticsScreen({ analytics, onOpenProfile }: AnalyticsScreenPro
             <Text style={styles.title}>Progress</Text>
             <Text style={styles.subtitle}>Readable signals for consistency, streaks, and weak spots.</Text>
             <View style={styles.heroMetaRow}>
-              <Ionicons color={colors.focus} name="calendar-outline" size={11} />
+              <Icon accent="amber" name="today-outline" size="xs" />
               <Text style={styles.heroMeta}>Last 7 days</Text>
             </View>
           </View>
@@ -50,31 +50,29 @@ export function AnalyticsScreen({ analytics, onOpenProfile }: AnalyticsScreenPro
       <Panel>
         <View style={styles.panelStack}>
           <View style={styles.promptRow}>
-            <View style={styles.promptIcon}>
-              <Ionicons color={colors.primary} name="pulse-outline" size={15} />
-            </View>
+            <IconBadge accent="sky" badgeSize={28} name="pulse" size={15} />
             <Text style={styles.promptText}>Key signals from the past week</Text>
           </View>
           <View style={styles.metricRow}>
             <MetricCard
-              icon="pie-chart"
+              accent="sky"
+              icon="speedometer"
               label="Completion rate"
               layout="stack"
-              tone={colors.primary}
               value={`${analytics.completionRate}%`}
             />
             <MetricCard
+              accent="coral"
               icon="flame"
               label="Current streak"
               layout="stack"
-              tone={colors.success}
               value={`${analytics.currentStreakDays}d`}
             />
             <MetricCard
-              icon="trophy"
+              accent="amber"
+              icon="medal"
               label="Longest streak"
               layout="stack"
-              tone={colors.focus}
               value={`${analytics.longestStreakDays}d`}
             />
           </View>
@@ -103,9 +101,7 @@ export function AnalyticsScreen({ analytics, onOpenProfile }: AnalyticsScreenPro
       <Panel>
         <View style={styles.panelStack}>
           <View style={styles.promptRow}>
-            <View style={styles.promptIcon}>
-              <Ionicons color={colors.primary} name="bar-chart-outline" size={15} />
-            </View>
+            <IconBadge accent="violet" badgeSize={28} name="stats-chart" size={15} />
             <View style={styles.panelHeaderCopy}>
               <SectionHeader title="Habit performance" meta="Best and weakest habits this week" compact />
             </View>
@@ -151,7 +147,7 @@ function HabitRankCard({
               <Text style={[styles.rankValueText, { color: tone }]}>{value}</Text>
             </View>
           </View>
-          <ProgressBar accent={tone} value={progress} />
+          <ProgressBar accent={tone} label={`${name} completion`} value={progress} />
         </View>
       </View>
     </GlassSurface>
@@ -234,7 +230,7 @@ const styles = StyleSheet.create({
   },
   statusLabel: {
     color: colors.textMuted,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     lineHeight: 13,
     textTransform: 'uppercase',
@@ -246,16 +242,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     flexDirection: 'row',
     gap: spacing.sm,
-  },
-  promptIcon: {
-    alignItems: 'center',
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.pill,
-    flexShrink: 0,
-    height: 28,
-    justifyContent: 'center',
-    marginTop: 2,
-    width: 28,
   },
   promptText: {
     color: colors.textMuted,
@@ -291,7 +277,7 @@ const styles = StyleSheet.create({
   },
   insightLabel: {
     color: colors.primary,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     lineHeight: 13,
     textTransform: 'uppercase',

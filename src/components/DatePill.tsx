@@ -42,7 +42,6 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.84,
-    transform: [{ scale: 0.98 }],
   },
   pill: {
     flex: 1,
@@ -56,7 +55,7 @@ const styles = StyleSheet.create({
   },
   label: {
     color: colors.textMuted,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     lineHeight: 13,
   },

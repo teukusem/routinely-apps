@@ -1,4 +1,5 @@
-import { Ionicons } from '@expo/vector-icons';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
+import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { DateSelector } from '../components/dashboard/DateSelector';
@@ -7,8 +8,12 @@ import { MoodCheckInCard } from '../components/dashboard/MoodCheckInCard';
 import { RecentReflectionsCard } from '../components/dashboard/RecentReflectionsCard';
 import { UpcomingRemindersCard } from '../components/dashboard/UpcomingRemindersCard';
 import { HabitCard } from '../components/habits/HabitCard';
+import { Icon, IconBadge } from '../components/shared/Icon';
+import { timePeriodIconPresets } from '../components/shared/iconPresets';
 import { MetricCard } from '../components/shared/MetricCard';
+import { NoteDetailContent } from '../components/shared/NoteDetailContent';
 import { Panel } from '../components/shared/Panel';
+import { RoutinelySheetModal } from '../components/shared/RoutinelySheetModal';
 import { SectionHeader } from '../components/shared/SectionHeader';
 import {
   AppHeader,
@@ -36,7 +41,9 @@ type DashboardScreenProps = {
   onSelectDate: (localDate: LocalDate) => void;
   onSelectMood: (mood: number) => void;
   onOpenProfile: () => void;
+  onCreateHabitRequest: () => void;
   onToggleHabit: (habitId: string) => void;
+  onOverlayOpenChange?: (isOpen: boolean) => void;
   scheduleTitle: string;
   selectedDate: LocalDate;
   selectedDateLabel: string;
@@ -51,15 +58,20 @@ export function DashboardScreen({
   moodDetail,
   nextHabitName,
   notes,
+  onCreateHabitRequest,
   onSelectDate,
   onSelectMood,
   onOpenProfile,
+  onOverlayOpenChange,
   onToggleHabit,
   scheduleTitle,
   selectedDate,
   selectedDateLabel,
   selectedMood,
 }: DashboardScreenProps) {
+  const detailSheetRef = useRef<BottomSheetModal>(null);
+  const [selectedNote, setSelectedNote] = useState<NotePreview | null>(null);
+
   const completedCount = dailyHabits.filter((habit) => habit.status === 'completed').length;
   const dueCount = dailyHabits.filter((habit) => habit.status === 'due').length;
   const missedCount = dailyHabits.filter((habit) => habit.status === 'missed').length;
@@ -67,6 +79,21 @@ export function DashboardScreen({
     (habit) => habit.status === 'due' || habit.status === 'upcoming',
   );
   const recentNotes = notes.slice(0, 3);
+
+  function openNoteDetail(note: NotePreview) {
+    setSelectedNote(note);
+    detailSheetRef.current?.present();
+    onOverlayOpenChange?.(true);
+  }
+
+  function closeNoteDetail() {
+    detailSheetRef.current?.dismiss();
+  }
+
+  function handleDismissNoteDetail() {
+    setSelectedNote(null);
+    onOverlayOpenChange?.(false);
+  }
 
   if (dailyHabits.length === 0) {
     return (
@@ -82,8 +109,8 @@ export function DashboardScreen({
             meta="Create your first routine to start tracking progress."
             compact
           />
-          <Pressable accessibilityLabel="Create habit" accessibilityRole="button" style={styles.createButton}>
-            <Ionicons color={colors.onAccent} name="add" size={18} />
+          <Pressable accessibilityLabel="Create habit" accessibilityRole="button" onPress={onCreateHabitRequest} style={styles.createButton}>
+            <Icon accent="mint" name="add-circle" size={16} />
             <Text style={styles.createButtonText}>Create habit</Text>
           </Pressable>
         </Panel>
@@ -92,77 +119,103 @@ export function DashboardScreen({
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide, styles.screenSections]}
-      showsVerticalScrollIndicator={false}
-    >
-      <AppHeader onPressProfile={onOpenProfile} subcopy={headerSubcopy} />
+    <>
+      <ScrollView
+        contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide, styles.screenSections]}
+        showsVerticalScrollIndicator={false}
+      >
+        <AppHeader onPressProfile={onOpenProfile} subcopy={headerSubcopy} />
 
-      <View style={styles.metricRow}>
-        <MetricCard
-          icon="radio-button-on"
-          label="Progress"
-          tone={colors.primary}
-          value={`${completedCount}/${dailyHabits.length}`}
-        />
-        <MetricCard icon="flash" label="Due" tone={colors.focus} value={`${dueCount}`} />
-        <MetricCard icon="alert-circle" label="Missed" tone={colors.warning} value={`${missedCount}`} />
-      </View>
-
-      <DashboardHero
-        completionRate={completionRate}
-        dueCount={dueCount}
-        missedCount={missedCount}
-        nextHabitName={nextHabitName}
-        selectedDateLabel={selectedDateLabel}
-      />
-
-      <DateSelector datePills={datePills} onSelectDate={onSelectDate} selectedDate={selectedDate} />
-
-      <Panel>
-        <SectionHeader title={scheduleTitle} meta="Grouped by when you usually do them" compact />
-        {timePeriods.map((period) => {
-          const periodHabits = dailyHabits.filter((habit) => habit.timePeriod === period);
-          if (periodHabits.length === 0) {
-            return null;
-          }
-
-          return (
-            <View key={period} style={styles.periodSection}>
-              <SectionHeader title={period} meta={`${periodHabits.length} habits`} compact />
-              {periodHabits.map((habit) => (
-                <HabitCard key={habit.id} habit={habit} onToggle={onToggleHabit} />
-              ))}
-            </View>
-          );
-        })}
-      </Panel>
-
-      <View style={styles.sideGrid}>
-        <Panel>
-          <SectionHeader title="Mood check-in" meta="Logged for this date" compact />
-          <MoodCheckInCard
-            moodDetail={moodDetail}
-            onSelectMood={onSelectMood}
-            selectedMood={selectedMood}
+        <View style={styles.metricRow}>
+          <MetricCard
+            accent="mint"
+            icon="trophy"
+            label="Progress"
+            value={`${completedCount}/${dailyHabits.length}`}
           />
-        </Panel>
+          <MetricCard accent="amber" icon="alarm-outline" label="Due" value={`${dueCount}`} />
+          <MetricCard accent="coral" icon="warning-outline" label="Missed" value={`${missedCount}`} />
+        </View>
+
+        <DashboardHero
+          completionRate={completionRate}
+          dueCount={dueCount}
+          missedCount={missedCount}
+          nextHabitName={nextHabitName}
+          selectedDateLabel={selectedDateLabel}
+        />
+
+        <DateSelector datePills={datePills} onSelectDate={onSelectDate} selectedDate={selectedDate} />
 
         <Panel>
-          <SectionHeader title="Upcoming reminders" meta="Quiet nudges, not noise" compact />
-          <UpcomingRemindersCard habits={reminderHabits.slice(0, 3)} />
-        </Panel>
-      </View>
+          <SectionHeader title={scheduleTitle} meta="Grouped by when you usually do them" compact />
+          {timePeriods.map((period) => {
+            const periodHabits = dailyHabits.filter((habit) => habit.timePeriod === period);
+            if (periodHabits.length === 0) {
+              return null;
+            }
 
-      <Panel>
-        <SectionHeader
-          title="Recent reflections"
-          meta={`${recentNotes.length} recent note${recentNotes.length === 1 ? '' : 's'}`}
-          compact
-        />
-        <RecentReflectionsCard notes={recentNotes} />
-      </Panel>
-    </ScrollView>
+            const periodPreset = timePeriodIconPresets[period];
+
+            return (
+              <View key={period} style={styles.periodSection}>
+                <View style={styles.periodHeader}>
+                  <IconBadge accent={periodPreset.accent} badgeSize={28} name={periodPreset.name} size="sm" />
+                  <SectionHeader title={period} meta={`${periodHabits.length} habits`} compact />
+                </View>
+                {periodHabits.map((habit) => (
+                  <HabitCard key={habit.id} habit={habit} onToggle={onToggleHabit} />
+                ))}
+              </View>
+            );
+          })}
+        </Panel>
+
+        <View style={styles.sideGrid}>
+          <Panel>
+            <SectionHeader title="Mood check-in" meta="Logged for this date" compact />
+            <MoodCheckInCard
+              moodDetail={moodDetail}
+              onSelectMood={onSelectMood}
+              selectedMood={selectedMood}
+            />
+          </Panel>
+
+          <Panel>
+            <SectionHeader title="Upcoming reminders" meta="Quiet nudges, not noise" compact />
+            <UpcomingRemindersCard habits={reminderHabits.slice(0, 3)} />
+          </Panel>
+        </View>
+
+        <Panel>
+          <SectionHeader
+            title="Recent reflections"
+            meta={`${recentNotes.length} recent note${recentNotes.length === 1 ? '' : 's'}`}
+            compact
+          />
+          <RecentReflectionsCard notes={recentNotes} onNotePress={openNoteDetail} />
+        </Panel>
+      </ScrollView>
+
+      <RoutinelySheetModal
+        ref={detailSheetRef}
+        contentKey={selectedNote?.id}
+        contentStyle={styles.sheetContent}
+        footer={
+          <Pressable
+            accessibilityLabel="Close note detail"
+            accessibilityRole="button"
+            onPress={closeNoteDetail}
+            style={styles.closeDetailButton}
+          >
+            <Text style={styles.closeDetailButtonText}>Close</Text>
+          </Pressable>
+        }
+        onDismiss={handleDismissNoteDetail}
+      >
+        {selectedNote ? <NoteDetailContent note={selectedNote} /> : null}
+      </RoutinelySheetModal>
+    </>
   );
 }
 
@@ -177,14 +230,13 @@ const styles = StyleSheet.create({
   periodSection: {
     gap: spacing.sm,
   },
+  periodHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
   sideGrid: {
     gap: spacing.lg,
-  },
-  caption: {
-    color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '500',
-    lineHeight: 17,
   },
   createButton: {
     alignItems: 'center',
@@ -193,12 +245,33 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     flexDirection: 'row',
     gap: spacing.xs,
-    minHeight: 44,
-    paddingHorizontal: spacing.md,
+    justifyContent: 'center',
+    minHeight: 36,
+    paddingHorizontal: spacing.sm + 4,
+    paddingVertical: spacing.xs + 2,
   },
   createButtonText: {
     color: colors.onAccent,
-    fontSize: 12,
+    fontSize: 13,
+    fontWeight: '800',
+    includeFontPadding: false,
+    lineHeight: 16,
+  },
+  sheetContent: {
+    gap: spacing.md,
+  },
+  closeDetailButton: {
+    alignItems: 'center',
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.glassBorder,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 48,
+  },
+  closeDetailButtonText: {
+    color: colors.text,
+    fontSize: 13,
     fontWeight: '800',
   },
 });

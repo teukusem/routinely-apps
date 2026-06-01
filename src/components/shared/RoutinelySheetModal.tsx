@@ -48,6 +48,7 @@ export const RoutinelySheetModal = forwardRef<BottomSheetModal, RoutinelySheetMo
         {...rest}
       >
         <BottomSheetView
+          accessibilityViewIsModal
           key={contentKey}
           style={[
             styles.content,

@@ -5,14 +5,22 @@ import { radius } from '../../theme/spacing';
 
 type ProgressBarProps = {
   accent: ColorValue;
+  label: string;
   value: number;
 };
 
-export function ProgressBar({ accent, value }: ProgressBarProps) {
-  const width: DimensionValue = `${Math.max(0, Math.min(value, 1)) * 100}%`;
+export function ProgressBar({ accent, label, value }: ProgressBarProps) {
+  const normalizedValue = Math.max(0, Math.min(value, 1));
+  const percentage = Math.round(normalizedValue * 100);
+  const width: DimensionValue = `${normalizedValue * 100}%`;
 
   return (
-    <View style={styles.progressTrack}>
+    <View
+      accessibilityLabel={label}
+      accessibilityRole="progressbar"
+      accessibilityValue={{ max: 100, min: 0, now: percentage, text: `${percentage}%` }}
+      style={styles.progressTrack}
+    >
       <View style={[styles.progressFill, { backgroundColor: accent, width }]} />
     </View>
   );
