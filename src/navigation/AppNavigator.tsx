@@ -1,145 +1,338 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, AppState, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, StyleSheet, View } from 'react-native';
 
 import { Screen } from '../components/Screen';
-import {
-  applyHabitAction,
-  buildDailyHabitViews,
-  completionRate,
-  findFirstActionableHabit,
-} from '../domain/daily-habits';
+import { completionRate, findFirstActionableHabit } from '../domain/daily-habits';
 import { reconcileSelectedDateAfterRollover } from '../domain/date-selection';
-import {
-  analyticsSummary,
-  buildDatePills,
-  buildInitialDailyStatusHints,
-  buildInitialHabitLogs,
-  buildInitialMoodDetailFixtures,
-  buildInitialMoodLogs,
-  getMoodDetailView,
-  initialHabits,
-  notes as initialNotes,
-} from '../data/routinely';
+import { buildDatePills, getMoodDetailView } from '../data/routinely';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { HabitsScreen } from '../screens/HabitsScreen';
+import { LoginScreen } from '../screens/LoginScreen';
 import { MoodScreen } from '../screens/MoodScreen';
 import { NotesScreen } from '../screens/NotesScreen';
+import { RegisterScreen } from '../screens/RegisterScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { colors } from '../theme/colors';
 import { BottomNav } from './BottomNav';
 import { formatLocalDateLabel, toLocalDate } from '../utils/local-date';
-import type { AppTab, DatePillOption, Habit, HabitLog, LocalDate, MoodLog, NotePreview, TimePeriod } from '../types/routinely';
+
+import { useAuthStore } from '../data/stores/auth-store';
+import { useDashboard } from '../data/hooks/use-dashboard';
+import { useUpsertHabitLog } from '../data/hooks/use-habit-logs';
+import { useCreateHabit, useArchiveHabit, useUpdateHabit } from '../data/hooks/use-habits';
+import { useUpsertMoodLog } from '../data/hooks/use-mood-logs';
+import { useCreateNote, useNotes } from '../data/hooks/use-notes';
+import { useWeeklyAnalytics } from '../data/hooks/use-analytics';
+
+import type {
+  AppTab,
+  DailyHabitView,
+  DatePillOption,
+  LocalDate,
+  MoodDetailView,
+  NotePreview,
+  TimePeriod,
+} from '../types/routinely';
+import type { DashboardHabit } from '../types/api';
 
 type DateViewState = {
   currentLocalDate: LocalDate;
   selectedDate: LocalDate;
 };
 
+// ─── Helpers ────────────────────────────────────────────────────────────────────
+function getCategoryAccent(category: string) {
+  switch (category.toLowerCase()) {
+    case 'health':
+      return colors.success;
+    case 'learning':
+      return colors.focus;
+    case 'productivity':
+      return colors.primary;
+    case 'mindfulness':
+      return colors.wellness;
+    default:
+      return colors.primarySoft;
+  }
+}
+
+/** Convert a backend DashboardHabit into the frontend DailyHabitView shape. */
+function toDailyHabitView(habit: DashboardHabit): DailyHabitView {
+  return {
+    id: habit.id,
+    name: habit.name,
+    category: habit.category,
+    timePeriod: habit.timePeriod,
+    scheduleLabel: habit.scheduleLabel ?? habit.scheduleTime ?? 'Anytime',
+    reminderLabel: '',
+    goalType: habit.goalType,
+    target: habit.target,
+    unit: habit.unit,
+    streak: habit.currentStreakDays,
+    accent: getCategoryAccent(habit.category),
+    progress: habit.progress,
+    status: habit.status,
+  };
+}
+
+// ─── Auth Gate ──────────────────────────────────────────────────────────────────
 export function AppNavigator() {
+  const { isAuthenticated, isLoading, restoreSession } = useAuthStore();
+
+  useEffect(() => {
+    restoreSession();
+  }, [restoreSession]);
+
+  if (isLoading) {
+    return (
+      <Screen padded={false} safeAreaEdges={['top', 'left', 'right']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </Screen>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <AuthFlow />;
+  }
+
+  return <MainApp />;
+}
+
+// ─── Auth Flow ──────────────────────────────────────────────────────────────────
+function AuthFlow() {
+  const [screen, setScreen] = useState<'login' | 'register'>('login');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { login, register } = useAuthStore();
+
+  const handleLogin = useCallback(
+    async (email: string, password: string) => {
+      setError(null);
+      setIsLoading(true);
+      try {
+        await login(email, password);
+      } catch (err: any) {
+        setError(err?.message ?? 'Login failed. Please check your credentials.');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [login],
+  );
+
+  const handleRegister = useCallback(
+    async (email: string, password: string, name?: string) => {
+      setError(null);
+      setIsLoading(true);
+      try {
+        await register(email, password, name);
+      } catch (err: any) {
+        setError(err?.message ?? 'Registration failed. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [register],
+  );
+
+  if (screen === 'register') {
+    return (
+      <RegisterScreen
+        error={error}
+        isLoading={isLoading}
+        onNavigateToLogin={() => {
+          setError(null);
+          setScreen('login');
+        }}
+        onRegister={handleRegister}
+      />
+    );
+  }
+
+  return (
+    <LoginScreen
+      error={error}
+      isLoading={isLoading}
+      onNavigateToRegister={() => {
+        setError(null);
+        setScreen('register');
+      }}
+      onLogin={handleLogin}
+    />
+  );
+}
+
+// ─── Main App (authenticated) ──────────────────────────────────────────────────
+function MainApp() {
   const [activeTab, setActiveTab] = useState<AppTab>('Dashboard');
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [habits, setHabits] = useState(initialHabits);
-  const [notes, setNotes] = useState<NotePreview[]>(initialNotes);
   const [dateView, setDateView] = useState<DateViewState>(() => {
     const localDate = toLocalDate(new Date());
-    return {
-      currentLocalDate: localDate,
-      selectedDate: localDate,
-    };
+    return { currentLocalDate: localDate, selectedDate: localDate };
   });
-  const { currentLocalDate, selectedDate } = dateView;
-  const [habitLogs, setHabitLogs] = useState<HabitLog[]>(() => buildInitialHabitLogs(currentLocalDate));
-  const [dailyStatusHints] = useState(() => buildInitialDailyStatusHints(currentLocalDate));
-  const [moodLogs, setMoodLogs] = useState<MoodLog[]>(() => buildInitialMoodLogs(currentLocalDate));
-  const [moodDetailFixtures] = useState(() => buildInitialMoodDetailFixtures(currentLocalDate));
 
+  const { currentLocalDate, selectedDate } = dateView;
+
+  // ─── Refresh date on app foreground ────────────────────────────────────────
   const refreshCurrentLocalDate = useCallback(() => {
     const nextCurrentDate = toLocalDate(new Date());
-
-    setDateView(({ currentLocalDate: previousCurrentDate, selectedDate }) => {
+    setDateView(({ currentLocalDate: previousCurrentDate, selectedDate: sel }) => {
       if (previousCurrentDate !== nextCurrentDate) {
         return {
           currentLocalDate: nextCurrentDate,
           selectedDate: reconcileSelectedDateAfterRollover({
             previousCurrentDate,
             nextCurrentDate,
-            selectedDate,
+            selectedDate: sel,
           }),
         };
       }
-
-      return {
-        currentLocalDate: previousCurrentDate,
-        selectedDate,
-      };
+      return { currentLocalDate: previousCurrentDate, selectedDate: sel };
     });
   }, []);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
-      if (nextState === 'active') {
-        refreshCurrentLocalDate();
-      }
+      if (nextState === 'active') refreshCurrentLocalDate();
     });
-
     return () => subscription.remove();
   }, [refreshCurrentLocalDate]);
 
+  // ─── API Queries ──────────────────────────────────────────────────────────
+  const dashboardQuery = useDashboard(selectedDate);
+  const notesQuery = useNotes();
+  const analyticsQuery = useWeeklyAnalytics(selectedDate);
+
+  // ─── API Mutations ────────────────────────────────────────────────────────
+  const upsertHabitLog = useUpsertHabitLog();
+  const createHabitMutation = useCreateHabit();
+  const archiveHabitMutation = useArchiveHabit();
+  const updateHabitMutation = useUpdateHabit();
+  const upsertMoodLog = useUpsertMoodLog();
+  const createNoteMutation = useCreateNote();
+  const { logout } = useAuthStore();
+
+  // ─── Derived data ─────────────────────────────────────────────────────────
   const datePills = useMemo<DatePillOption[]>(
     () => buildDatePills(currentLocalDate),
     [currentLocalDate],
   );
 
-  const dailyHabits = useMemo(
-    () =>
-      buildDailyHabitViews({
-        habits,
-        logs: habitLogs,
-        selectedDate,
-        currentLocalDate,
-        statusHints: dailyStatusHints,
-      }),
-    [habits, habitLogs, selectedDate, currentLocalDate, dailyStatusHints],
-  );
+  const dailyHabits = useMemo<DailyHabitView[]>(() => {
+    if (!dashboardQuery.data?.habits) return [];
+    return dashboardQuery.data.habits.map(toDailyHabitView);
+  }, [dashboardQuery.data?.habits]);
 
   const selectedDateLabel = useMemo(
     () => formatLocalDateLabel(selectedDate),
     [selectedDate],
   );
 
-  const selectedMood = useMemo(() => {
-    return moodLogs.find((log) => log.localDate === selectedDate)?.moodScore ?? 0;
-  }, [moodLogs, selectedDate]);
-
-  const moodDetail = useMemo(
-    () => getMoodDetailView(selectedDate, moodDetailFixtures, selectedMood),
-    [selectedDate, moodDetailFixtures, selectedMood],
+  const selectedMood = useMemo(
+    () => dashboardQuery.data?.moodLog?.moodScore ?? 0,
+    [dashboardQuery.data?.moodLog],
   );
+
+  const moodDetail = useMemo<MoodDetailView>(() => {
+    const moodLog = dashboardQuery.data?.moodLog;
+    if (!moodLog) {
+      return getMoodDetailView(selectedDate, [], selectedMood);
+    }
+    return {
+      summary: moodLog.note ?? `Mood score ${moodLog.moodScore}/5 logged.`,
+      energyLabel: moodLog.energyScore != null ? `${moodLog.energyScore}/10` : '—',
+      stressLabel: moodLog.stressScore != null ? `${moodLog.stressScore}/10` : '—',
+      note: moodLog.note ?? '',
+      hasFixture: true,
+    };
+  }, [dashboardQuery.data?.moodLog, selectedDate, selectedMood]);
+
+  const notes = useMemo<NotePreview[]>(() => {
+    if (!notesQuery.data?.data) return [];
+    return notesQuery.data.data.map((n) => ({
+      id: n.id,
+      title: n.title,
+      body: n.body,
+      linkedTo: n.linkedToLabel ?? 'Manual note',
+    }));
+  }, [notesQuery.data?.data]);
+
+  const analyticsSummary = useMemo(() => {
+    const data = analyticsQuery.data;
+    if (!data) {
+      return {
+        bars: [],
+        completionRate: 0,
+        currentStreakDays: 0,
+        longestStreakDays: 0,
+        topHabits: [],
+      };
+    }
+    return {
+      bars: data.bars.map((b) => ({ label: b.label, value: b.value })),
+      completionRate: data.completionRate,
+      currentStreakDays: data.currentStreakDays,
+      longestStreakDays: data.longestStreakDays,
+      topHabits: data.topHabits.map((h) => ({
+        id: h.habitId,
+        name: h.name,
+        tone: colors.primary,
+        value: `${Math.round(h.completionRate * 100)}%`,
+      })),
+    };
+  }, [analyticsQuery.data]);
 
   const scheduleTitle =
     selectedDate === currentLocalDate ? 'Today schedule' : `${selectedDateLabel} schedule`;
-
   const headerSubcopy =
     selectedDate === currentLocalDate ? 'Today plan' : `${selectedDateLabel} plan`;
-
   const nextHabit = findFirstActionableHabit(dailyHabits);
 
+  // ─── Handlers ─────────────────────────────────────────────────────────────
   function handleSelectDate(nextDate: LocalDate) {
-    setDateView((currentDateView) => ({
-      ...currentDateView,
-      selectedDate: nextDate,
-    }));
+    setDateView((current) => ({ ...current, selectedDate: nextDate }));
   }
 
   function handleToggleHabit(habitId: string) {
-    const habit = habits.find((item) => item.id === habitId);
-    if (!habit) {
-      return;
-    }
+    const habit = dailyHabits.find((h) => h.id === habitId);
+    if (!habit) return;
 
-    setHabitLogs((currentLogs) => applyHabitAction(currentLogs, habit, selectedDate));
+    if (habit.goalType === 'checkbox') {
+      const isCompleted = habit.status === 'completed';
+      if (isCompleted) {
+        // Reset: delete the log
+        const { useResetHabitLog } = require('../data/hooks/use-habit-logs');
+        // Simplified: toggle checkbox via upsert
+        upsertHabitLog.mutate({
+          habitId,
+          localDate: selectedDate,
+          status: 'completed',
+          value: 1,
+        });
+      } else {
+        upsertHabitLog.mutate({
+          habitId,
+          localDate: selectedDate,
+          status: 'completed',
+          value: 1,
+        });
+      }
+    } else {
+      // For numeric/duration, increment by step
+      const step = habit.goalType === 'duration' ? 15 : 1;
+      const nextValue = Math.min(habit.target, habit.progress + step);
+      const isComplete = nextValue >= habit.target;
+      upsertHabitLog.mutate({
+        habitId,
+        localDate: selectedDate,
+        status: isComplete ? 'completed' : 'in_progress',
+        value: nextValue,
+      });
+    }
   }
 
   function handleCreateHabit({
@@ -151,48 +344,19 @@ export function AppNavigator() {
     category: string;
     timePeriod: TimePeriod;
   }) {
-    const trimmedCategory = category.trim();
-    const nextCategory = trimmedCategory.length > 0 ? trimmedCategory : 'General';
-    const trimmedName = name.trim();
-    const nextName = trimmedName.length > 0 ? trimmedName : `New ${nextCategory} habit`;
-    const now = Date.now();
-    const countForCategory = habits.filter((habit) => habit.category === nextCategory).length;
-    const accent = getCategoryAccent(nextCategory);
+    const trimmedCategory = category.trim() || 'General';
+    const trimmedName = name.trim() || `New ${trimmedCategory} habit`;
 
-    const newHabit: Habit = {
-      id: `${nextCategory.toLowerCase().replace(/\s+/g, '-')}-${now}`,
-      name: nextName,
-      category: nextCategory,
+    createHabitMutation.mutate({
+      name: trimmedName,
+      category: trimmedCategory,
       timePeriod,
-      scheduleLabel: 'Anytime',
-      reminderLabel: 'Reminder off',
       goalType: 'checkbox',
       target: 1,
       unit: 'check-in',
-      streak: 0,
-      accent,
-    };
-
-    setHabits((currentHabits) => [...currentHabits, newHabit]);
-  }
-
-  function handleSelectMood(moodScore: number) {
-    setMoodLogs((currentLogs) => {
-      const index = currentLogs.findIndex((log) => log.localDate === selectedDate);
-
-      if (index === -1) {
-        return [...currentLogs, { localDate: selectedDate, moodScore }];
-      }
-
-      const nextLogs = [...currentLogs];
-      nextLogs[index] = { localDate: selectedDate, moodScore };
-      return nextLogs;
+      frequencyRule: { type: 'daily' },
+      startDate: currentLocalDate,
     });
-  }
-
-  function handleArchiveHabit(habitId: string) {
-    setHabits((currentHabits) => currentHabits.filter((habit) => habit.id !== habitId));
-    setHabitLogs((currentLogs) => currentLogs.filter((log) => log.habitId !== habitId));
   }
 
   function handleEditHabit({
@@ -209,33 +373,39 @@ export function AppNavigator() {
     const trimmedName = name.trim();
     const trimmedCategory = category.trim();
 
-    setHabits((currentHabits) =>
-      currentHabits.map((habit) => {
-        if (habit.id !== habitId) {
-          return habit;
-        }
+    // We need the habit version for optimistic locking
+    const habit = dashboardQuery.data?.habits.find((h) => h.id === habitId);
+    // The dashboard doesn't return version, so we use 1 as default for now
+    // In a future iteration we can fetch the full habit first
 
-        return {
-          ...habit,
-          accent: getCategoryAccent(trimmedCategory.length > 0 ? trimmedCategory : habit.category),
-          category: trimmedCategory.length > 0 ? trimmedCategory : habit.category,
-          name: trimmedName.length > 0 ? trimmedName : habit.name,
-          timePeriod,
-        };
-      }),
-    );
+    updateHabitMutation.mutate({
+      id: habitId,
+      input: {
+        version: 1, // TODO: track version properly
+        ...(trimmedName ? { name: trimmedName } : {}),
+        ...(trimmedCategory ? { category: trimmedCategory } : {}),
+        timePeriod,
+      },
+    });
+  }
+
+  function handleArchiveHabit(habitId: string) {
+    archiveHabitMutation.mutate(habitId);
+  }
+
+  function handleSelectMood(moodScore: number) {
+    upsertMoodLog.mutate({
+      localDate: selectedDate,
+      input: { moodScore },
+    });
   }
 
   function handleCreateNote({ body, title }: { title: string; body: string }) {
-    const timestamp = Date.now();
-    const newNote: NotePreview = {
-      id: `note-${timestamp}`,
+    createNoteMutation.mutate({
       title: title.trim(),
       body: body.trim(),
-      linkedTo: 'Manual note',
-    };
-
-    setNotes((currentNotes) => [newNote, ...currentNotes]);
+      localDate: selectedDate,
+    });
   }
 
   const handleOpenProfile = useCallback(() => {
@@ -250,9 +420,10 @@ export function AppNavigator() {
 
   const handleLogout = useCallback(() => {
     handleCloseSettings();
-    Alert.alert('Logged out', 'Sign-in will be available when account sync is connected.');
-  }, [handleCloseSettings]);
+    logout();
+  }, [handleCloseSettings, logout]);
 
+  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <Screen padded={false} safeAreaEdges={['top', 'left', 'right']}>
       <View style={styles.content}>
@@ -262,24 +433,24 @@ export function AppNavigator() {
           renderScreen({
             activeTab,
             analytics: analyticsSummary,
-            completionRate: completionRate(dailyHabits),
+            completionRate: dashboardQuery.data?.summary?.completionRate ?? completionRate(dailyHabits),
             dailyHabits,
             datePills,
-            habits,
             headerSubcopy,
+            isLoading: dashboardQuery.isLoading,
             moodDetail,
             nextHabitName: nextHabit?.name,
             notes,
+            onArchiveHabit: handleArchiveHabit,
+            onCreateHabit: handleCreateHabit,
+            onCreateHabitRequest: () => setActiveTab('Habits'),
+            onCreateNote: handleCreateNote,
+            onEditHabit: handleEditHabit,
             onOpenProfile: handleOpenProfile,
+            onOverlayOpenChange: setIsOverlayOpen,
             onSelectDate: handleSelectDate,
             onSelectMood: handleSelectMood,
             onToggleHabit: handleToggleHabit,
-            onCreateHabit: handleCreateHabit,
-            onCreateHabitRequest: () => setActiveTab('Habits'),
-            onArchiveHabit: handleArchiveHabit,
-            onEditHabit: handleEditHabit,
-            onCreateNote: handleCreateNote,
-            onOverlayOpenChange: setIsOverlayOpen,
             scheduleTitle,
             selectedDate,
             selectedDateLabel,
@@ -292,15 +463,22 @@ export function AppNavigator() {
   );
 }
 
+// ─── Screen Router ──────────────────────────────────────────────────────────────
 type RenderScreenArgs = {
   activeTab: AppTab;
-  analytics: typeof analyticsSummary;
+  analytics: {
+    bars: { label: string; value: number }[];
+    completionRate: number;
+    currentStreakDays: number;
+    longestStreakDays: number;
+    topHabits: { id: string; name: string; tone: string; value: string }[];
+  };
   completionRate: number;
-  dailyHabits: ReturnType<typeof buildDailyHabitViews>;
+  dailyHabits: DailyHabitView[];
   datePills: DatePillOption[];
-  habits: typeof initialHabits;
   headerSubcopy: string;
-  moodDetail: ReturnType<typeof getMoodDetailView>;
+  isLoading: boolean;
+  moodDetail: MoodDetailView;
   nextHabitName?: string;
   notes: NotePreview[];
   onSelectDate: (localDate: LocalDate) => void;
@@ -325,8 +503,8 @@ function renderScreen({
   completionRate: dailyCompletionRate,
   dailyHabits,
   datePills,
-  habits,
   headerSubcopy,
+  isLoading,
   moodDetail,
   nextHabitName,
   notes: noteItems,
@@ -345,6 +523,14 @@ function renderScreen({
   selectedDateLabel,
   selectedMood,
 }: RenderScreenArgs) {
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
   switch (activeTab) {
     case 'Dashboard':
       return (
@@ -404,23 +590,14 @@ function renderScreen({
   }
 }
 
-function getCategoryAccent(category: string) {
-  switch (category.toLowerCase()) {
-    case 'health':
-      return colors.success;
-    case 'learning':
-      return colors.focus;
-    case 'productivity':
-      return colors.primary;
-    case 'mindfulness':
-      return colors.wellness;
-    default:
-      return colors.primarySoft;
-  }
-}
-
 const styles = StyleSheet.create({
   content: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
   },
 });

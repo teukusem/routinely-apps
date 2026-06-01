@@ -79,7 +79,7 @@ export type AnalyticsSummary = {
   completionRate: number;
   currentStreakDays: number;
   longestStreakDays: number;
-  topHabits: { name: string; tone: ColorValue; value: string }[];
+  topHabits: { id: string; name: string; tone: ColorValue; value: string }[];
 };
 
 export type DatePillOption = {

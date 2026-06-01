@@ -108,7 +108,7 @@ export function AnalyticsScreen({ analytics, onOpenProfile }: AnalyticsScreenPro
           </View>
           <View style={styles.rankList}>
             {analytics.topHabits.map((habit, index) => (
-              <HabitRankCard key={habit.name} index={index + 1} name={habit.name} tone={habit.tone} value={habit.value} />
+              <HabitRankCard key={habit.id} index={index + 1} name={habit.name} tone={habit.tone} value={habit.value} />
             ))}
           </View>
         </View>
