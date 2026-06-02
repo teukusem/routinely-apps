@@ -10,6 +10,7 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '../../theme/colors';
+import { effectiveBottomInset, sheetFooterPadding } from '../../theme/safe-area';
 import { radius, spacing } from '../../theme/spacing';
 
 type RoutinelySheetModalProps = Omit<BottomSheetModalProps, 'children' | 'snapPoints'> & {
@@ -53,17 +54,13 @@ export const RoutinelySheetModal = forwardRef<BottomSheetModal, RoutinelySheetMo
           style={[
             styles.content,
             contentStyle,
-            !footer && { paddingBottom: insets.bottom + spacing.xl },
+            !footer && { paddingBottom: effectiveBottomInset(insets) + spacing.xl },
           ]}
         >
           {children}
           {footer ? (
             <View
-              style={[
-                styles.footer,
-                { paddingBottom: Math.max(insets.bottom, spacing.md) + spacing.lg },
-                footerStyle,
-              ]}
+              style={[styles.footer, { paddingBottom: sheetFooterPadding(insets) }, footerStyle]}
             >
               {footer}
             </View>

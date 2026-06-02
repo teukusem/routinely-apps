@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GlassSurface } from '../components/GlassSurface';
+import { effectiveBottomInset } from '../theme/safe-area';
 import { Icon } from '../components/shared/Icon';
 import { tabIcons } from '../components/shared/iconPresets';
 import { appTabs } from '../data/routinely';
@@ -26,8 +27,10 @@ type BottomNavProps = {
 export function BottomNav({ activeTab, onChangeTab }: BottomNavProps) {
   const insets = useSafeAreaInsets();
 
+  const bottomPadding = effectiveBottomInset(insets) + spacing.xs;
+
   return (
-    <View style={[styles.bottomNavWrap, { paddingBottom: insets.bottom + spacing.xs }]}>
+    <View style={[styles.bottomNavWrap, { paddingBottom: bottomPadding }]}>
       <GlassSurface
         borderRadius={radius.pill}
         contentStyle={styles.bottomNavRow}
@@ -106,6 +109,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     height: 30,
     justifyContent: 'center',
+    overflow: 'hidden',
     width: 30,
   },
   tabLabel: {

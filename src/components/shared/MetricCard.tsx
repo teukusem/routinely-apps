@@ -34,7 +34,10 @@ export function MetricCard({ accent, icon, label, layout = 'inline', value }: Me
           <Text numberOfLines={1} style={[styles.metricValue, stacked && styles.metricValueStack]}>
             {value}
           </Text>
-          <Text numberOfLines={2} style={[styles.metricLabel, stacked && styles.metricLabelStack]}>
+          <Text
+            numberOfLines={stacked ? 2 : 1}
+            style={[styles.metricLabel, stacked && styles.metricLabelStack]}
+          >
             {label}
           </Text>
         </View>

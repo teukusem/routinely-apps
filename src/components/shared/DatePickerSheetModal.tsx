@@ -26,6 +26,7 @@ const ScrollPicker = require('react-native-wheel-scrollview-picker').default as 
 import type { DatePickerOpenConfig } from '../../contexts/DatePickerModalContext';
 import { colors } from '../../theme/colors';
 import { iconColors } from '../../theme/iconColors';
+import { sheetFooterPadding } from '../../theme/safe-area';
 import { radius, spacing } from '../../theme/spacing';
 import {
   buildDateWheelSelection,
@@ -136,7 +137,7 @@ export const DatePickerSheetModal = forwardRef<BottomSheetModal, DatePickerSheet
         stackBehavior="push"
       >
         {config ? (
-          <BottomSheetView style={[styles.content, { paddingBottom: insets.bottom + spacing.lg }]}>
+          <BottomSheetView style={[styles.content, { paddingBottom: sheetFooterPadding(insets) }]}>
             <Text style={styles.title}>{title}</Text>
 
             <View key={sheetKey} style={styles.pickerRow}>
