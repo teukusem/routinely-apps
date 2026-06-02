@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { GlassSurface } from '../components/GlassSurface';
 import { MoodCheckInCard } from '../components/dashboard/MoodCheckInCard';
-import { AnalyticsBars, AppHeader, moodEmojiForScore, Panel, sharedStyles } from '../components/RoutinelyUI';
+import { AnalyticsBars, AppHeader, moodEmojiForScore, Panel, ScreenContent, sharedStyles } from '../components/RoutinelyUI';
 import { Icon } from '../components/shared/Icon';
 import { colors } from '../theme/colors';
 import { radius, spacing } from '../theme/spacing';
@@ -33,6 +33,7 @@ export function MoodScreen({
   return (
     <ScrollView contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide]} showsVerticalScrollIndicator={false}>
       <AppHeader onPressProfile={onOpenProfile} subcopy="Mood tracking" />
+      <ScreenContent>
       <GlassSurface borderRadius={radius.xl}>
         <View style={styles.hero}>
           <View style={styles.heroCopy}>
@@ -84,6 +85,7 @@ export function MoodScreen({
         subtitle="A simple weekly pattern before deeper insights"
         title="Mood trend"
       />
+      </ScreenContent>
     </ScrollView>
   );
 }

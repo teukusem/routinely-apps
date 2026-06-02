@@ -16,10 +16,7 @@ import { NoteDetailContent } from '../components/shared/NoteDetailContent';
 import { Panel } from '../components/shared/Panel';
 import { RoutinelySheetModal } from '../components/shared/RoutinelySheetModal';
 import { SectionHeader } from '../components/shared/SectionHeader';
-import {
-  AppHeader,
-  sharedStyles,
-} from '../components/RoutinelyUI';
+import { AppHeader, ScreenContent, sharedStyles } from '../components/RoutinelyUI';
 import { timePeriods } from '../data/routinely';
 import { colors } from '../theme/colors';
 import { radius, spacing } from '../theme/spacing';
@@ -102,11 +99,11 @@ export function DashboardScreen({
         contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.emptyContent}>
-          <AppHeader onPressProfile={onOpenProfile} subcopy={headerSubcopy} />
+        <AppHeader onPressProfile={onOpenProfile} subcopy={headerSubcopy} />
+        <ScreenContent>
           <DateSelector datePills={datePills} onSelectDate={onSelectDate} selectedDate={selectedDate} />
           <DashboardEmptyState onCreateHabit={onCreateHabitRequest} />
-        </View>
+        </ScreenContent>
       </ScrollView>
     );
   }
@@ -114,11 +111,12 @@ export function DashboardScreen({
   return (
     <>
       <ScrollView
-        contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide, styles.screenSections]}
+        contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide]}
         showsVerticalScrollIndicator={false}
       >
         <AppHeader onPressProfile={onOpenProfile} subcopy={headerSubcopy} />
 
+        <ScreenContent>
         <View style={styles.metricRow}>
           <MetricCard
             accent="mint"
@@ -188,6 +186,7 @@ export function DashboardScreen({
           />
           <RecentReflectionsCard notes={recentNotes} onNotePress={openNoteDetail} />
         </Panel>
+        </ScreenContent>
       </ScrollView>
 
       <RoutinelySheetModal
@@ -213,13 +212,6 @@ export function DashboardScreen({
 }
 
 const styles = StyleSheet.create({
-  emptyContent: {
-    gap: spacing.md,
-    width: '100%',
-  },
-  screenSections: {
-    gap: spacing.lg,
-  },
   metricRow: {
     flexDirection: 'row',
     gap: spacing.sm,

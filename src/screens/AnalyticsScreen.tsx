@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, Text, View, type ColorValue } from 'react-native';
 
 import { GlassSurface } from '../components/GlassSurface';
-import { AnalyticsBars, AppHeader, MetricCard, Panel, SectionHeader, sharedStyles } from '../components/RoutinelyUI';
+import { AnalyticsBars, AppHeader, MetricCard, Panel, ScreenContent, SectionHeader, sharedStyles } from '../components/RoutinelyUI';
 import { Icon, IconBadge } from '../components/shared/Icon';
 import { ProgressBar } from '../components/shared/ProgressBar';
 import { colors } from '../theme/colors';
@@ -26,10 +26,11 @@ export function AnalyticsScreen({ analytics, onOpenProfile }: AnalyticsScreenPro
 
   return (
     <ScrollView
-      contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide, styles.screenSections]}
+      contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide]}
       showsVerticalScrollIndicator={false}
     >
       <AppHeader onPressProfile={onOpenProfile} subcopy="Weekly insights" />
+      <ScreenContent>
       <GlassSurface borderRadius={radius.xl}>
         <View style={styles.hero}>
           <View style={styles.heroCopy}>
@@ -113,6 +114,7 @@ export function AnalyticsScreen({ analytics, onOpenProfile }: AnalyticsScreenPro
           </View>
         </View>
       </Panel>
+      </ScreenContent>
     </ScrollView>
   );
 }
@@ -168,9 +170,6 @@ function getToneSoft(tone: ColorValue): string {
 }
 
 const styles = StyleSheet.create({
-  screenSections: {
-    gap: spacing.lg,
-  },
   hero: {
     alignItems: 'flex-start',
     flexDirection: 'row',

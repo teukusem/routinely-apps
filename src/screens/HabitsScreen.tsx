@@ -16,7 +16,7 @@ import {
 
 import { GlassSurface } from '../components/GlassSurface';
 import { HabitCard } from '../components/habits/HabitCard';
-import { AppHeader, EmptyState, sharedStyles } from '../components/RoutinelyUI';
+import { AppHeader, EmptyState, ScreenContent, sharedStyles } from '../components/RoutinelyUI';
 import { Icon, IconBadge, type IconAccentName, type IconName } from '../components/shared/Icon';
 import { settingsRowPresets } from '../components/shared/iconPresets';
 import { categoryIconPresets, timePeriodIconPresets } from '../components/shared/iconPresets';
@@ -310,6 +310,7 @@ export function HabitsScreen({
     () => (
       <>
         <AppHeader onPressProfile={onOpenProfile} subcopy="Manage routines" />
+        <ScreenContent>
         <GlassSurface borderRadius={radius.xl}>
           <View style={styles.hero}>
             <View style={styles.heroCopy}>
@@ -391,6 +392,7 @@ export function HabitsScreen({
             />
           </View>
         ) : null}
+        </ScreenContent>
       </>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps

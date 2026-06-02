@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View, type DimensionValue } from 'react-native';
+import type { ReactNode } from 'react';
+import { Pressable, StyleSheet, Text, View, type DimensionValue, type StyleProp, type ViewStyle } from 'react-native';
 
 import { mapBarsToFillPercentages } from './shared/analytics-bars-data';
 import { GlassSurface } from './GlassSurface';
@@ -42,27 +43,40 @@ export function AppHeader({ onPressProfile, subcopy = 'Daily plan' }: AppHeaderP
   const initials = getInitials(profileQuery.data?.name);
 
   return (
-    <View style={styles.appHeader}>
-      <View>
-        <Text style={styles.brand}>Routinely</Text>
-        <Text style={styles.headerSubcopy}>{subcopy}</Text>
+    <View style={sharedStyles.appHeaderShell}>
+      <View style={styles.appHeader}>
+        <View>
+          <Text style={styles.brand}>Routinely</Text>
+          <Text style={styles.headerSubcopy}>{subcopy}</Text>
+        </View>
+        <Pressable
+          accessibilityLabel="Open profile settings"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !onPressProfile }}
+          disabled={!onPressProfile}
+          onPress={onPressProfile}
+          style={({ pressed }) => [
+            styles.avatarButton,
+            styles.innerSurface,
+            onPressProfile && pressed && styles.avatarButtonPressed,
+          ]}
+        >
+          <Text style={styles.avatarText}>{initials}</Text>
+        </Pressable>
       </View>
-      <Pressable
-        accessibilityLabel="Open profile settings"
-        accessibilityRole="button"
-        accessibilityState={{ disabled: !onPressProfile }}
-        disabled={!onPressProfile}
-        onPress={onPressProfile}
-        style={({ pressed }) => [
-          styles.avatarButton,
-          styles.innerSurface,
-          onPressProfile && pressed && styles.avatarButtonPressed,
-        ]}
-      >
-        <Text style={styles.avatarText}>{initials}</Text>
-      </Pressable>
     </View>
   );
+}
+
+/** Vertical stack for screen body below AppHeader — keeps section gap consistent app-wide. */
+export function ScreenContent({
+  children,
+  style,
+}: {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return <View style={[sharedStyles.screenContent, style]}>{children}</View>;
 }
 
 const MOOD_OPTIONS = [
@@ -281,10 +295,17 @@ export function AnalyticsBars({
 
 export const sharedStyles = StyleSheet.create({
   screenScroll: {
-    gap: spacing.md,
     paddingBottom: 112,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
+  },
+  appHeaderShell: {
+    marginBottom: spacing.md,
+    width: '100%',
+  },
+  screenContent: {
+    gap: spacing.md,
+    width: '100%',
   },
   centeredWide: {
     alignSelf: 'center',

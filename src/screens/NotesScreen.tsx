@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { GlassSurface } from '../components/GlassSurface';
-import { AppHeader, NoteCard, Panel, SectionHeader, sharedStyles } from '../components/RoutinelyUI';
+import { AppHeader, NoteCard, Panel, ScreenContent, SectionHeader, sharedStyles } from '../components/RoutinelyUI';
 import { Icon, IconBadge } from '../components/shared/Icon';
 import { NoteDetailContent } from '../components/shared/NoteDetailContent';
 import { RoutinelySheetModal } from '../components/shared/RoutinelySheetModal';
@@ -94,6 +94,7 @@ export function NotesScreen({ notes, onCreateNote, onOpenProfile, onOverlayOpenC
     <>
       <ScrollView contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide]} showsVerticalScrollIndicator={false}>
         <AppHeader onPressProfile={onOpenProfile} subcopy="Reflections" />
+        <ScreenContent>
         <GlassSurface borderRadius={radius.xl}>
           <View style={styles.hero}>
             <View style={styles.heroCopy}>
@@ -203,6 +204,7 @@ export function NotesScreen({ notes, onCreateNote, onOpenProfile, onOverlayOpenC
             )}
           </View>
         </Panel>
+        </ScreenContent>
       </ScrollView>
 
       <RoutinelySheetModal
