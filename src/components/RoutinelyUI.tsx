@@ -10,6 +10,7 @@ import { SectionHeader } from './shared/SectionHeader';
 import { colors } from '../theme/colors';
 import { iconColors } from '../theme/iconColors';
 import { radius, spacing } from '../theme/spacing';
+import { useProfile } from '../data/hooks/use-profile';
 import type { AnalyticsBar, NotePreview } from '../types/routinely';
 
 export { DashboardHero } from './dashboard/DashboardHero';
@@ -21,13 +22,25 @@ export { Panel } from './shared/Panel';
 export { ProgressBar } from './shared/ProgressBar';
 export { SectionHeader } from './shared/SectionHeader';
 
+function getInitials(name?: string | null): string {
+  if (!name) return '?';
+  return name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 type AppHeaderProps = {
   onPressProfile?: () => void;
-  profileInitials?: string;
   subcopy?: string;
 };
 
-export function AppHeader({ onPressProfile, profileInitials = 'T', subcopy = 'Daily plan' }: AppHeaderProps) {
+export function AppHeader({ onPressProfile, subcopy = 'Daily plan' }: AppHeaderProps) {
+  const profileQuery = useProfile();
+  const initials = getInitials(profileQuery.data?.name);
+
   return (
     <View style={styles.appHeader}>
       <View>
@@ -46,7 +59,7 @@ export function AppHeader({ onPressProfile, profileInitials = 'T', subcopy = 'Da
           onPressProfile && pressed && styles.avatarButtonPressed,
         ]}
       >
-        <Text style={styles.avatarText}>{profileInitials}</Text>
+        <Text style={styles.avatarText}>{initials}</Text>
       </Pressable>
     </View>
   );
