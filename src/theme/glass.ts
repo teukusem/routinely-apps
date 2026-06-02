@@ -1,13 +1,18 @@
+import { Platform } from 'react-native';
+
 import { radius } from './spacing';
 
+const androidNavOverlay = 'rgba(246, 246, 246, 0.2)';
+
 export const glass = {
-  blurIntensity: 36,
-  navBlurIntensity: 56,
-  cardOverlay: 'rgba(246, 246, 246, 0.12)',
+  blurIntensity: Platform.OS === 'android' ? 48 : 36,
+  navBlurIntensity: Platform.OS === 'android' ? 80 : 56,
+  cardOverlay: Platform.OS === 'android' ? 'rgba(246, 246, 246, 0.16)' : 'rgba(246, 246, 246, 0.12)',
   nestedFill: 'rgba(246, 246, 246, 0.09)',
   panelFill: 'rgba(246, 246, 246, 0.06)',
   fallbackFill: 'rgba(32, 32, 32, 0.92)',
-  navFallbackFill: 'rgba(32, 32, 32, 0.96)',
+  navFallbackFill: Platform.OS === 'android' ? 'rgba(24, 24, 24, 0.78)' : 'rgba(32, 32, 32, 0.96)',
+  navOverlay: Platform.OS === 'android' ? androidNavOverlay : 'rgba(246, 246, 246, 0.12)',
   defaultRadius: radius.xl,
   activeDateEdgeWidth: 4,
 } as const;

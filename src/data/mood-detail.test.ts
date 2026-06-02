@@ -1,7 +1,19 @@
 import {
-  buildInitialMoodDetailFixtures,
   getMoodDetailView,
 } from '../data/routinely';
+import type { MoodDetailFixture } from '../types/routinely';
+
+function buildInitialMoodDetailFixtures(localDate: string): MoodDetailFixture[] {
+  return [
+    {
+      localDate,
+      summary: 'Calm, focused.',
+      energyScore: 7,
+      stressScore: 3,
+      note: 'Kept the day intentionally simple.',
+    },
+  ];
+}
 
 describe('mood detail fixtures', () => {
   it('returns fixture copy for the current date', () => {

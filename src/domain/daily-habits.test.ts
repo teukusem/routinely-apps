@@ -5,9 +5,91 @@ import {
   incrementHabitLog,
   toggleCheckboxLog,
 } from '../domain/daily-habits';
-import { buildInitialDailyStatusHints, buildInitialHabitLogs, initialHabits } from '../data/routinely';
+import type { Habit, HabitLog, MockDailyStatusHint } from '../types/routinely';
 
 const currentLocalDate = '2026-05-31';
+const initialHabits: Habit[] = [
+  {
+    id: 'reading',
+    name: 'Reading',
+    category: 'Growth',
+    timePeriod: 'Morning',
+    scheduleLabel: 'Daily',
+    reminderLabel: '08:00',
+    goalType: 'numeric',
+    target: 25,
+    unit: 'pages',
+    streak: 3,
+    accent: '#8B5CF6',
+  },
+  {
+    id: 'workout',
+    name: 'Workout',
+    category: 'Health',
+    timePeriod: 'Afternoon',
+    scheduleLabel: 'Daily',
+    reminderLabel: '17:00',
+    goalType: 'duration',
+    target: 40,
+    unit: 'minutes',
+    streak: 2,
+    accent: '#10B981',
+  },
+  {
+    id: 'journal',
+    name: 'Journal',
+    category: 'Mindfulness',
+    timePeriod: 'Evening',
+    scheduleLabel: 'Daily',
+    reminderLabel: '21:00',
+    goalType: 'checkbox',
+    target: 1,
+    unit: 'session',
+    streak: 5,
+    accent: '#F59E0B',
+  },
+  {
+    id: 'water',
+    name: 'Water',
+    category: 'Health',
+    timePeriod: 'Anytime',
+    scheduleLabel: 'Daily',
+    reminderLabel: 'Every 2 hours',
+    goalType: 'numeric',
+    target: 8,
+    unit: 'glasses',
+    streak: 4,
+    accent: '#3B82F6',
+  },
+  {
+    id: 'deep-work',
+    name: 'Deep Work',
+    category: 'Productivity',
+    timePeriod: 'Morning',
+    scheduleLabel: 'Weekdays',
+    reminderLabel: '09:00',
+    goalType: 'duration',
+    target: 60,
+    unit: 'minutes',
+    streak: 6,
+    accent: '#EC4899',
+  },
+];
+
+function buildInitialHabitLogs(localDate: string): HabitLog[] {
+  return [
+    { habitId: 'reading', localDate, status: 'in_progress', value: 18 },
+    { habitId: 'workout', localDate, status: 'completed', value: 40 },
+    { habitId: 'water', localDate, status: 'in_progress', value: 3 },
+  ];
+}
+
+function buildInitialDailyStatusHints(localDate: string): MockDailyStatusHint[] {
+  return [
+    { habitId: 'journal', localDate, status: 'upcoming' },
+    { habitId: 'water', localDate, status: 'missed' },
+  ];
+}
 
 describe('daily-habits projection', () => {
   it('preserves due, upcoming, missed, partial, and completed states', () => {

@@ -20,15 +20,45 @@ offline sync, and notification delivery are intentionally deferred.
 
 ## Run
 
+Start the app locally with Expo Go:
+
 ```bash
 npm install
 npm run ios
+```
+
+For Android, create an emulator in Android Studio or connect a phone first:
+
+```bash
+npm run android
+```
+
+If Expo cannot resolve `api.expo.dev`, use the offline fallback:
+
+```bash
+npm run ios:offline
+npm run android:offline
 ```
 
 If macOS is still pointed at Command Line Tools instead of full Xcode, use:
 
 ```bash
 npm run ios:xcode
+```
+
+Use the native build commands only when you specifically need a local native
+build or a shareable Android APK:
+
+```bash
+npm run ios:native
+npm run android:native
+npm run android:apk
+```
+
+The APK is written to:
+
+```text
+android/app/build/outputs/apk/release/app-release.apk
 ```
 
 For a permanent Xcode setup:

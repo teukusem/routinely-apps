@@ -29,17 +29,19 @@ export function GlassSurface({
   const isNested = variant === 'nested';
   const isPanel = variant === 'panel';
   const isNav = variant === 'nav';
-  const useBlur = Platform.OS !== 'web' && !isNested && !isPanel;
+  const useBlur = Platform.OS === 'ios' && !isNested && !isPanel;
   const blurIntensity = isNav ? glass.navBlurIntensity : glass.blurIntensity;
 
   const fillColor = isNested
     ? glass.nestedFill
     : isPanel
       ? glass.panelFill
-      : useBlur
-        ? glass.cardOverlay
-        : isNav
-          ? glass.navFallbackFill
+      : isNav
+        ? useBlur
+          ? glass.navOverlay
+          : glass.navFallbackFill
+        : useBlur
+          ? glass.cardOverlay
           : glass.fallbackFill;
 
   return (
@@ -63,7 +65,7 @@ export function GlassSurface({
           <BlurView
             intensity={blurIntensity}
             style={StyleSheet.absoluteFill}
-            tint="default"
+            tint={isNav ? 'dark' : 'default'}
           />
         ) : null}
         <View
