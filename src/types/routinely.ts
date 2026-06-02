@@ -20,6 +20,8 @@ export type Habit = {
   unit: string;
   streak: number;
   accent: ColorValue;
+  startDate?: string;
+  endDate?: string | null;
 };
 
 export type HabitLog = {

@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     borderColor: colors.glassBorder,
     borderRadius: radius.lg,
     borderWidth: 1,
-    gap: spacing.xs,
+    gap: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.lg,
   },

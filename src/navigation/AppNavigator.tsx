@@ -557,11 +557,7 @@ function renderScreen({
     case 'Habits':
       return (
         <HabitsScreen
-          dailyHabits={dailyHabits}
-          onArchiveHabit={onArchiveHabit}
-          onCreateHabit={onCreateHabit}
           onOverlayOpenChange={onOverlayOpenChange}
-          onEditHabit={onEditHabit}
           onOpenProfile={onOpenProfile}
         />
       );

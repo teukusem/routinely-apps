@@ -1,6 +1,18 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { useMemo, useRef, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ColorValue } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type ColorValue,
+  type ListRenderItemInfo,
+} from 'react-native';
 
 import { GlassSurface } from '../components/GlassSurface';
 import { HabitCard } from '../components/habits/HabitCard';
@@ -10,16 +22,16 @@ import { settingsRowPresets } from '../components/shared/iconPresets';
 import { categoryIconPresets, timePeriodIconPresets } from '../components/shared/iconPresets';
 import { Panel } from '../components/shared/Panel';
 import { RoutinelySheetModal } from '../components/shared/RoutinelySheetModal';
+import { DatePickerField } from '../components/shared/DatePickerField';
 import { SectionHeader } from '../components/shared/SectionHeader';
 import { colors } from '../theme/colors';
 import { radius, spacing } from '../theme/spacing';
-import type { DailyHabitView, TimePeriod } from '../types/routinely';
+import { isValidLocalDate, parseLocalDate, toLocalDate } from '../utils/local-date';
+import { useHabitsInfinite, useCreateHabit, useArchiveHabit, useUpdateHabit } from '../data/hooks/use-habits';
+import type { ApiHabit } from '../types/api';
+import type { Habit, TimePeriod } from '../types/routinely';
 
 type HabitsScreenProps = {
-  dailyHabits: DailyHabitView[];
-  onCreateHabit: (draft: { name: string; category: string; timePeriod: TimePeriod }) => void;
-  onArchiveHabit: (habitId: string) => void;
-  onEditHabit: (draft: { habitId: string; name: string; category: string; timePeriod: TimePeriod }) => void;
   onOpenProfile: () => void;
   onOverlayOpenChange?: (isOpen: boolean) => void;
 };
@@ -32,11 +44,55 @@ const filters: HabitFilter[] = ['Active', 'Health', 'Learning', 'Missed'];
 const categoryOptions: HabitCategory[] = ['Health', 'Learning', 'Productivity', 'Mindfulness', 'General'];
 const timePeriodOptions: TimePeriod[] = ['Morning', 'Afternoon', 'Evening', 'Anytime'];
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function getCategoryAccent(category: string): ColorValue {
+  switch (category.toLowerCase()) {
+    case 'health':
+      return colors.success;
+    case 'learning':
+      return colors.focus;
+    case 'productivity':
+      return colors.primary;
+    case 'mindfulness':
+      return colors.wellness;
+    default:
+      return colors.primarySoft;
+  }
+}
+
+function apiHabitToHabit(h: ApiHabit): Habit {
+  return {
+    id: h.id,
+    name: h.name,
+    category: h.category,
+    timePeriod: h.timePeriod,
+    scheduleLabel: h.scheduleTime ?? h.timePeriod,
+    reminderLabel: '',
+    goalType: h.goalType,
+    target: h.target,
+    unit: h.unit,
+    streak: 0, // Streak is daily-projection only; stable config has no streak
+    accent: getCategoryAccent(h.category),
+    startDate: h.startDate,
+    endDate: h.endDate,
+  };
+}
+
+function isValidDate(value: string): boolean {
+  return isValidLocalDate(value);
+}
+
+function formatShortDate(iso: string): string {
+  const [year, month, day] = iso.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const m = months[parseInt(month, 10) - 1] ?? month;
+  const d = parseInt(day, 10);
+  const currentYear = new Date().getFullYear().toString();
+  return year === currentYear ? `${m} ${d}` : `${m} ${d}, ${year}`;
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export function HabitsScreen({
-  dailyHabits,
-  onArchiveHabit,
-  onCreateHabit,
-  onEditHabit,
   onOpenProfile,
   onOverlayOpenChange,
 }: HabitsScreenProps) {
@@ -44,37 +100,67 @@ export function HabitsScreen({
   const [sheetMode, setSheetMode] = useState<SheetMode>('create');
   const [selectedHabitId, setSelectedHabitId] = useState<string | null>(null);
 
+  // ─── Create form state ──────────────────────────────────────────────────
   const [newHabitName, setNewHabitName] = useState('');
   const [newHabitCategory, setNewHabitCategory] = useState<HabitCategory>('General');
   const [newHabitTimePeriod, setNewHabitTimePeriod] = useState<TimePeriod>('Anytime');
+  const [newStartDate, setNewStartDate] = useState(() => toLocalDate(new Date()));
+  const [newEndDate, setNewEndDate] = useState('');
 
+  // ─── Edit form state ────────────────────────────────────────────────────
   const [editHabitName, setEditHabitName] = useState('');
   const [editHabitCategory, setEditHabitCategory] = useState<HabitCategory>('General');
   const [editHabitTimePeriod, setEditHabitTimePeriod] = useState<TimePeriod>('Anytime');
+  const [editStartDate, setEditStartDate] = useState('');
+  const [editEndDate, setEditEndDate] = useState('');
 
   const sheetRef = useRef<BottomSheetModal>(null);
 
+  // ─── Data: own query, not from dashboard ────────────────────────────────
+  const habitsQuery = useHabitsInfinite('active');
+  const createHabitMutation = useCreateHabit();
+  const archiveHabitMutation = useArchiveHabit();
+  const updateHabitMutation = useUpdateHabit();
+
+  const allHabits = useMemo<Habit[]>(() => {
+    if (!habitsQuery.data?.pages) return [];
+    return habitsQuery.data.pages.flatMap((page) => page.data.map(apiHabitToHabit));
+  }, [habitsQuery.data?.pages]);
+
   const filteredHabits = useMemo(() => {
     if (activeFilter === 'Active') {
-      return dailyHabits;
+      return allHabits;
     }
-
     if (activeFilter === 'Missed') {
-      return dailyHabits.filter((habit) => habit.status === 'missed');
+      // Missed status is a daily-projection concept; without a date query,
+      // we can't determine missed locally. Show empty with a helpful message.
+      return [];
     }
-
-    return dailyHabits.filter((habit) => habit.category === activeFilter);
-  }, [activeFilter, dailyHabits]);
+    return allHabits.filter((habit) => habit.category === activeFilter);
+  }, [activeFilter, allHabits]);
 
   const selectedHabit = useMemo(
-    () => dailyHabits.find((habit) => habit.id === selectedHabitId),
-    [dailyHabits, selectedHabitId],
+    () => allHabits.find((habit) => habit.id === selectedHabitId),
+    [allHabits, selectedHabitId],
   );
 
+  // Also find the raw ApiHabit for version tracking
+  const selectedApiHabit = useMemo(() => {
+    if (!selectedHabitId || !habitsQuery.data?.pages) return undefined;
+    for (const page of habitsQuery.data.pages) {
+      const found = page.data.find((h) => h.id === selectedHabitId);
+      if (found) return found;
+    }
+    return undefined;
+  }, [habitsQuery.data?.pages, selectedHabitId]);
+
+  // ─── Form helpers ───────────────────────────────────────────────────────
   function resetCreateForm() {
     setNewHabitName('');
     setNewHabitCategory('General');
     setNewHabitTimePeriod('Anytime');
+    setNewStartDate(toLocalDate(new Date()));
+    setNewEndDate('');
   }
 
   function openCreateSheet() {
@@ -84,6 +170,8 @@ export function HabitsScreen({
     } else {
       setNewHabitCategory('General');
     }
+    setNewStartDate(toLocalDate(new Date()));
+    setNewEndDate('');
     onOverlayOpenChange?.(true);
     sheetRef.current?.present();
   }
@@ -96,15 +184,15 @@ export function HabitsScreen({
   }
 
   function openEditSheet(habitId: string) {
-    const habit = dailyHabits.find((item) => item.id === habitId);
-    if (!habit) {
-      return;
-    }
+    const habit = allHabits.find((item) => item.id === habitId);
+    if (!habit) return;
 
     setSelectedHabitId(habitId);
     setEditHabitName(habit.name);
     setEditHabitCategory(toHabitCategory(habit.category));
     setEditHabitTimePeriod(habit.timePeriod);
+    setEditStartDate(habit.startDate ?? toLocalDate(new Date()));
+    setEditEndDate(habit.endDate ?? '');
     setSheetMode('edit');
     onOverlayOpenChange?.(true);
     sheetRef.current?.present();
@@ -120,51 +208,107 @@ export function HabitsScreen({
   }
 
   function submitCreateHabit() {
-    if (newHabitName.trim().length === 0) {
+    if (newHabitName.trim().length === 0) return;
+    if (!isValidDate(newStartDate)) {
+      Alert.alert('Invalid date', 'Please enter a valid start date (YYYY-MM-DD).');
+      return;
+    }
+    if (newEndDate && !isValidDate(newEndDate)) {
+      Alert.alert('Invalid date', 'Please enter a valid end date (YYYY-MM-DD).');
       return;
     }
 
-    onCreateHabit({
-      name: newHabitName,
+    createHabitMutation.mutate({
+      name: newHabitName.trim(),
       category: newHabitCategory,
       timePeriod: newHabitTimePeriod,
+      goalType: 'checkbox',
+      target: 1,
+      unit: 'check-in',
+      frequencyRule: { type: 'daily' },
+      startDate: newStartDate,
+      ...(newEndDate ? { endDate: newEndDate } : {}),
     });
     closeSheet();
   }
 
   function submitEditHabit() {
-    if (!selectedHabitId || editHabitName.trim().length === 0) {
+    if (!selectedHabitId || editHabitName.trim().length === 0) return;
+    if (!isValidDate(editStartDate)) {
+      Alert.alert('Invalid date', 'Please enter a valid start date (YYYY-MM-DD).');
+      return;
+    }
+    if (editEndDate && !isValidDate(editEndDate)) {
+      Alert.alert('Invalid date', 'Please enter a valid end date (YYYY-MM-DD).');
       return;
     }
 
-    onEditHabit({
-      habitId: selectedHabitId,
-      name: editHabitName,
-      category: editHabitCategory,
-      timePeriod: editHabitTimePeriod,
+    updateHabitMutation.mutate({
+      id: selectedHabitId,
+      input: {
+        version: selectedApiHabit?.version ?? 1,
+        name: editHabitName.trim(),
+        category: editHabitCategory,
+        timePeriod: editHabitTimePeriod,
+        startDate: editStartDate,
+        ...(editEndDate ? { endDate: editEndDate } : {}),
+      },
     });
     closeSheet();
   }
 
   function handleArchiveHabit(habitId: string) {
-    const habit = dailyHabits.find((item) => item.id === habitId);
-    if (!habit) {
-      return;
-    }
+    const habit = allHabits.find((item) => item.id === habitId);
+    if (!habit) return;
 
     Alert.alert('Archive habit', `Archive "${habit.name}"?`, [
       { style: 'cancel', text: 'Cancel' },
       {
         style: 'destructive',
         text: 'Archive',
-        onPress: () => onArchiveHabit(habitId),
+        onPress: () => archiveHabitMutation.mutate(habitId),
       },
     ]);
   }
 
-  return (
-    <View style={styles.screen}>
-      <ScrollView contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide]} showsVerticalScrollIndicator={false}>
+  // ─── Infinite scroll ────────────────────────────────────────────────────
+  const handleEndReached = useCallback(() => {
+    if (habitsQuery.hasNextPage && !habitsQuery.isFetchingNextPage) {
+      habitsQuery.fetchNextPage();
+    }
+  }, [habitsQuery]);
+
+  const renderHabitItem = useCallback(
+    ({ item }: ListRenderItemInfo<Habit>) => (
+      <HabitCard
+        key={item.id}
+        habit={item}
+        onPressArchive={handleArchiveHabit}
+        onPressDetail={openDetailSheet}
+        onPressEdit={openEditSheet}
+        showManagement
+      />
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allHabits],
+  );
+
+  const ListFooter = useMemo(() => {
+    if (habitsQuery.isFetchingNextPage) {
+      return (
+        <View style={styles.loadingFooter}>
+          <ActivityIndicator color={colors.primary} size="small" />
+          <Text style={styles.loadingText}>Loading more…</Text>
+        </View>
+      );
+    }
+    return null;
+  }, [habitsQuery.isFetchingNextPage]);
+
+  // ─── List Header ────────────────────────────────────────────────────────
+  const ListHeader = useMemo(
+    () => (
+      <>
         <AppHeader onPressProfile={onOpenProfile} subcopy="Manage routines" />
         <GlassSurface borderRadius={radius.xl}>
           <View style={styles.hero}>
@@ -176,9 +320,9 @@ export function HabitsScreen({
                 <Text style={styles.heroMeta}>Daily habits & schedules</Text>
               </View>
             </View>
-            <View style={[styles.statusPill, dailyHabits.length > 0 && styles.statusPillActive]}>
-              <Text style={[styles.statusCount, dailyHabits.length > 0 && styles.statusCountActive]}>
-                {dailyHabits.length}
+            <View style={[styles.statusPill, allHabits.length > 0 && styles.statusPillActive]}>
+              <Text style={[styles.statusCount, allHabits.length > 0 && styles.statusCountActive]}>
+                {allHabits.length}
               </Text>
               <Text style={styles.statusLabel}>active</Text>
             </View>
@@ -208,45 +352,64 @@ export function HabitsScreen({
         </View>
 
         <Panel>
-          <View style={styles.panelStack}>
-            <View style={styles.panelHeaderRow}>
-              <View style={styles.promptRow}>
-                <IconBadge accent="violet" badgeSize={28} name="albums-outline" size={15} />
-                <View style={styles.panelHeaderCopy}>
-                  <SectionHeader title={`${activeFilter} habits`} meta={`${filteredHabits.length} shown`} compact />
-                </View>
+          <View style={styles.panelHeaderRow}>
+            <View style={styles.promptRow}>
+              <IconBadge accent="violet" badgeSize={28} name="albums-outline" size={15} />
+              <View style={styles.panelHeaderCopy}>
+                <SectionHeader title={`${activeFilter} habits`} meta={`${filteredHabits.length} shown`} compact />
               </View>
-              <Pressable
-                accessibilityLabel="Create habit"
-                accessibilityRole="button"
-                onPress={openCreateSheet}
-                style={({ pressed }) => [styles.createButton, pressed && styles.createButtonPressed]}
-              >
-                <Icon accent="mint" name="add-circle" size={16} />
-                <Text style={styles.createButtonText}>Create</Text>
-              </Pressable>
             </View>
-            {filteredHabits.map((habit) => (
-              <HabitCard
-                key={habit.id}
-                habit={habit}
-                onPressArchive={handleArchiveHabit}
-                onPressDetail={openDetailSheet}
-                onPressEdit={openEditSheet}
-                showManagement
-              />
-            ))}
-            {filteredHabits.length === 0 ? (
-              <EmptyState
-                accent="mint"
-                description="Create one to start tracking this filter."
-                icon="infinite-outline"
-                title="No habits found"
-              />
-            ) : null}
+            <Pressable
+              accessibilityLabel="Create habit"
+              accessibilityRole="button"
+              onPress={openCreateSheet}
+              style={({ pressed }) => [styles.createButton, pressed && styles.createButtonPressed]}
+            >
+              <Icon accent="mint" name="add-circle" size={16} />
+              <Text style={styles.createButtonText}>Create</Text>
+            </Pressable>
           </View>
         </Panel>
-      </ScrollView>
+
+        {habitsQuery.isLoading ? (
+          <View style={styles.loadingFooter}>
+            <ActivityIndicator color={colors.primary} size="large" />
+          </View>
+        ) : null}
+
+        {!habitsQuery.isLoading && filteredHabits.length === 0 ? (
+          <View style={styles.emptyStateSlot}>
+            <EmptyState
+              accent="mint"
+              description={
+                activeFilter === 'Missed'
+                  ? 'Missed status is only available on the Dashboard for a selected date.'
+                  : 'Create one to start tracking this filter.'
+              }
+              icon="infinite-outline"
+              title="No habits found"
+            />
+          </View>
+        ) : null}
+      </>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeFilter, allHabits.length, filteredHabits.length, habitsQuery.isLoading, onOpenProfile],
+  );
+
+  return (
+    <View style={styles.screen}>
+      <FlatList
+        data={habitsQuery.isLoading ? [] : filteredHabits}
+        renderItem={renderHabitItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide, styles.listGap]}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={ListHeader}
+        ListFooterComponent={ListFooter}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.3}
+      />
 
       <RoutinelySheetModal
         ref={sheetRef}
@@ -255,14 +418,14 @@ export function HabitsScreen({
         footer={
           sheetMode === 'create' ? (
             <SheetFormActions
-              canSubmit={newHabitName.trim().length > 0}
+              canSubmit={newHabitName.trim().length > 0 && isValidDate(newStartDate)}
               onCancel={closeSheet}
               onSubmit={submitCreateHabit}
               submitLabel="Create habit"
             />
           ) : sheetMode === 'edit' ? (
             <SheetFormActions
-              canSubmit={editHabitName.trim().length > 0}
+              canSubmit={editHabitName.trim().length > 0 && isValidDate(editStartDate)}
               onCancel={closeSheet}
               onSubmit={submitEditHabit}
               submitLabel="Save changes"
@@ -296,10 +459,14 @@ export function HabitsScreen({
         {sheetMode === 'create' ? (
           <HabitFormFields
             category={newHabitCategory}
+            endDate={newEndDate}
             name={newHabitName}
             onChangeCategory={setNewHabitCategory}
+            onChangeEndDate={setNewEndDate}
             onChangeName={setNewHabitName}
+            onChangeStartDate={setNewStartDate}
             onChangeTimePeriod={setNewHabitTimePeriod}
+            startDate={newStartDate}
             timePeriod={newHabitTimePeriod}
           />
         ) : null}
@@ -309,10 +476,14 @@ export function HabitsScreen({
         {sheetMode === 'edit' ? (
           <HabitFormFields
             category={editHabitCategory}
+            endDate={editEndDate}
             name={editHabitName}
             onChangeCategory={setEditHabitCategory}
+            onChangeEndDate={setEditEndDate}
             onChangeName={setEditHabitName}
+            onChangeStartDate={setEditStartDate}
             onChangeTimePeriod={setEditHabitTimePeriod}
+            startDate={editStartDate}
             timePeriod={editHabitTimePeriod}
           />
         ) : null}
@@ -321,6 +492,7 @@ export function HabitsScreen({
   );
 }
 
+// ─── Helpers ────────────────────────────────────────────────────────────────────
 function toHabitCategory(category: string): HabitCategory {
   const lowered = category.toLowerCase();
   if (lowered === 'health') return 'Health';
@@ -331,9 +503,9 @@ function toHabitCategory(category: string): HabitCategory {
 }
 
 const categoryIcons = categoryIconPresets;
-
 const timePeriodIcons = timePeriodIconPresets;
 
+// ─── Sheet Header ───────────────────────────────────────────────────────────
 function SheetHeader({
   icon,
   onClose,
@@ -371,19 +543,28 @@ function SheetHeader({
   );
 }
 
+// ─── Form Fields ────────────────────────────────────────────────────────────
 function HabitFormFields({
   category,
+  endDate,
   name,
   onChangeCategory,
+  onChangeEndDate,
   onChangeName,
+  onChangeStartDate,
   onChangeTimePeriod,
+  startDate,
   timePeriod,
 }: {
   category: HabitCategory;
+  endDate: string;
   name: string;
   onChangeCategory: (value: HabitCategory) => void;
+  onChangeEndDate: (value: string) => void;
   onChangeName: (value: string) => void;
+  onChangeStartDate: (value: string) => void;
   onChangeTimePeriod: (value: TimePeriod) => void;
+  startDate: string;
   timePeriod: TimePeriod;
 }) {
   return (
@@ -483,10 +664,24 @@ function HabitFormFields({
           })}
         </View>
       </View>
+
+      <View style={styles.dateSection}>
+        <DatePickerField label="Start date" onChange={onChangeStartDate} value={startDate} />
+        <DatePickerField
+          label="End date (optional)"
+          minimumDate={isValidLocalDate(startDate) ? parseLocalDate(startDate) : undefined}
+          onChange={onChangeEndDate}
+          onClear={() => onChangeEndDate('')}
+          optional
+          placeholder="No end date"
+          value={endDate}
+        />
+      </View>
     </View>
   );
 }
 
+// ─── Sheet Form Actions ─────────────────────────────────────────────────────
 function SheetFormActions({
   canSubmit,
   onCancel,
@@ -526,15 +721,11 @@ function SheetFormActions({
   );
 }
 
-function HabitDetailContent({ habit }: { habit: DailyHabitView }) {
-  const statusTone = getDetailStatusTone(habit.status);
-
+// ─── Detail Content ─────────────────────────────────────────────────────────
+function HabitDetailContent({ habit }: { habit: Habit }) {
   return (
     <View style={styles.detailStack}>
       <View style={styles.detailMetaRow}>
-        <View style={[styles.statusBadge, { backgroundColor: statusTone.soft, borderColor: statusTone.solid }]}>
-          <Text style={[styles.statusBadgeText, { color: statusTone.solid }]}>{getDetailStatusLabel(habit.status)}</Text>
-        </View>
         <View style={styles.categoryBadge}>
           <Text style={styles.categoryBadgeText}>{habit.category}</Text>
         </View>
@@ -547,13 +738,24 @@ function HabitDetailContent({ habit }: { habit: DailyHabitView }) {
       <View style={styles.detailStatsGrid}>
         <DetailStatCard accent="lavender" icon="hourglass-outline" label="Time" value={habit.timePeriod} />
         <DetailStatCard accent="sky" icon="flag" label="Target" value={`${habit.target} ${habit.unit}`} />
-        <DetailStatCard accent="coral" icon="flame" label="Streak" value={`${habit.streak} days`} />
-        <DetailStatCard accent="mint" icon="trending-up" label="Progress" value={`${habit.progress}/${habit.target}`} />
+        <DetailStatCard
+          accent="mint"
+          icon="calendar-outline"
+          label="Start"
+          value={habit.startDate ? formatShortDate(habit.startDate) : '—'}
+        />
+        <DetailStatCard
+          accent="coral"
+          icon="calendar-outline"
+          label="End"
+          value={habit.endDate ? formatShortDate(habit.endDate) : 'No end date'}
+        />
       </View>
     </View>
   );
 }
 
+// ─── Detail Sheet Actions ───────────────────────────────────────────────────
 function DetailSheetActions({
   onArchive,
   onClose,
@@ -595,6 +797,7 @@ function DetailSheetActions({
   );
 }
 
+// ─── Detail Stat Card ───────────────────────────────────────────────────────
 function DetailStatCard({
   accent,
   icon,
@@ -617,43 +820,13 @@ function DetailStatCard({
   );
 }
 
-function getDetailStatusLabel(status: DailyHabitView['status']): string {
-  switch (status) {
-    case 'completed':
-      return 'Completed';
-    case 'due':
-      return 'Due now';
-    case 'missed':
-      return 'Missed';
-    case 'upcoming':
-      return 'Upcoming';
-    case 'skipped':
-      return 'Skipped';
-    default:
-      return 'Active';
-  }
-}
-
-function getDetailStatusTone(status: DailyHabitView['status']): { soft: string; solid: ColorValue } {
-  switch (status) {
-    case 'completed':
-      return { soft: colors.successSoft, solid: colors.success };
-    case 'due':
-      return { soft: colors.focusSoft, solid: colors.focus };
-    case 'missed':
-      return { soft: colors.warningSoft, solid: colors.warning };
-    case 'upcoming':
-      return { soft: colors.primarySoft, solid: colors.primary };
-    case 'skipped':
-      return { soft: colors.surfaceMuted, solid: colors.textMuted };
-    default:
-      return { soft: colors.surfaceMuted, solid: colors.textMuted };
-  }
-}
-
+// ─── Styles ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+  },
+  listGap: {
+    gap: spacing.md,
   },
   hero: {
     alignItems: 'flex-start',
@@ -719,10 +892,15 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     maxWidth: 240,
   },
+  emptyStateSlot: {
+    marginTop: spacing.md,
+  },
   filterRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
+    paddingBottom: spacing.md,
+    paddingTop: spacing.md,
   },
   filterBadge: {
     alignItems: 'center',
@@ -752,9 +930,6 @@ const styles = StyleSheet.create({
   },
   filterTextActive: {
     color: colors.primary,
-  },
-  panelStack: {
-    gap: spacing.md,
   },
   panelHeaderRow: {
     alignItems: 'flex-start',
@@ -868,6 +1043,7 @@ const styles = StyleSheet.create({
   },
   nameInput: {
     color: colors.text,
+    flex: 1,
     fontSize: 15,
     fontWeight: '600',
     includeFontPadding: false,
@@ -910,6 +1086,9 @@ const styles = StyleSheet.create({
   },
   optionTextActive: {
     color: colors.primary,
+  },
+  dateSection: {
+    gap: spacing.md,
   },
   sheetActions: {
     flexDirection: 'row',
@@ -962,17 +1141,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
-  },
-  statusBadge: {
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xs,
-  },
-  statusBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    lineHeight: 14,
   },
   categoryBadge: {
     backgroundColor: colors.primarySoft,
@@ -1055,5 +1223,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 44,
+  },
+  loadingFooter: {
+    alignItems: 'center',
+    gap: spacing.xs,
+    justifyContent: 'center',
+    paddingVertical: spacing.lg,
+  },
+  loadingText: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

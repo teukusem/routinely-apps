@@ -9,6 +9,24 @@ import { iconAccentPair } from '../../theme/iconColors';
 import { radius, spacing } from '../../theme/spacing';
 import type { DailyHabitView, Habit, HabitStatus } from '../../types/routinely';
 
+function formatShortDate(iso: string): string {
+  const [year, month, day] = iso.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const m = months[parseInt(month, 10) - 1] ?? month;
+  const d = parseInt(day, 10);
+  const currentYear = new Date().getFullYear().toString();
+  return year === currentYear ? `${m} ${d}` : `${m} ${d}, ${year}`;
+}
+
+function formatDateRange(startDate?: string, endDate?: string | null): string | null {
+  if (!startDate) return null;
+  const start = formatShortDate(startDate);
+  if (endDate) {
+    return `${start} – ${formatShortDate(endDate)}`;
+  }
+  return `Started ${start}`;
+}
+
 type HabitCardProps = {
   habit: DailyHabitView | Habit;
   onToggle?: (habitId: string) => void;
@@ -134,6 +152,14 @@ export function HabitCard({
               <Text numberOfLines={1} style={styles.habitMeta}>
                 {habit.scheduleLabel} · {habit.streak} day streak
               </Text>
+              {habit.startDate ? (
+                <View style={styles.dateRangeRow}>
+                  <Icon color={colors.textMuted} name="calendar-outline" size={11} />
+                  <Text numberOfLines={1} style={styles.dateRangeText}>
+                    {formatDateRange(habit.startDate, habit.endDate)}
+                  </Text>
+                </View>
+              ) : null}
               {status === 'due' || status === 'missed' ? (
                 <Text numberOfLines={1} style={styles.habitReminder}>
                   {habit.reminderLabel}
@@ -407,6 +433,17 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     minWidth: 88,
     textAlign: 'right',
+  },
+  dateRangeRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+  },
+  dateRangeText: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 14,
   },
   managementRow: {
     borderTopColor: colors.hairline,

@@ -99,12 +99,14 @@ export function DashboardScreen({
   if (dailyHabits.length === 0) {
     return (
       <ScrollView
-        contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide, styles.emptyScroll]}
+        contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide]}
         showsVerticalScrollIndicator={false}
       >
-        <AppHeader onPressProfile={onOpenProfile} subcopy={headerSubcopy} />
-        <DateSelector datePills={datePills} onSelectDate={onSelectDate} selectedDate={selectedDate} />
-        <DashboardEmptyState onCreateHabit={onCreateHabitRequest} />
+        <View style={styles.emptyContent}>
+          <AppHeader onPressProfile={onOpenProfile} subcopy={headerSubcopy} />
+          <DateSelector datePills={datePills} onSelectDate={onSelectDate} selectedDate={selectedDate} />
+          <DashboardEmptyState onCreateHabit={onCreateHabitRequest} />
+        </View>
       </ScrollView>
     );
   }
@@ -211,8 +213,9 @@ export function DashboardScreen({
 }
 
 const styles = StyleSheet.create({
-  emptyScroll: {
-    gap: spacing.lg,
+  emptyContent: {
+    gap: spacing.md,
+    width: '100%',
   },
   screenSections: {
     gap: spacing.lg,

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as habitsService from '../api/habits-service';
 import { dashboardKeys } from './use-dashboard';
 import type { CreateHabitInput, UpdateHabitInput } from '../../types/api';
@@ -7,6 +7,8 @@ export const habitKeys = {
   all: ['habits'] as const,
   list: (lifecycle?: string, category?: string) =>
     [...habitKeys.all, 'list', lifecycle, category] as const,
+  listInfinite: (lifecycle?: string, category?: string) =>
+    [...habitKeys.all, 'list-infinite', lifecycle, category] as const,
   detail: (id: string) => [...habitKeys.all, 'detail', id] as const,
 };
 
@@ -14,6 +16,23 @@ export function useHabits(lifecycle?: string, category?: string) {
   return useQuery({
     queryKey: habitKeys.list(lifecycle, category),
     queryFn: () => habitsService.listHabits(lifecycle, category),
+  });
+}
+
+const PAGE_SIZE = 20;
+
+export function useHabitsInfinite(lifecycle?: string, category?: string) {
+  return useInfiniteQuery({
+    queryKey: habitKeys.listInfinite(lifecycle, category),
+    queryFn: ({ pageParam }) =>
+      habitsService.listHabitsPaginated({
+        lifecycle,
+        category,
+        cursor: pageParam ?? undefined,
+        limit: PAGE_SIZE,
+      }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.meta.nextCursor ?? undefined,
   });
 }
 
