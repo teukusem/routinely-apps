@@ -2,6 +2,7 @@ import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { DashboardEmptyState } from '../components/dashboard/DashboardEmptyState';
 import { DateSelector } from '../components/dashboard/DateSelector';
 import { DashboardHero } from '../components/dashboard/DashboardHero';
 import { MoodCheckInCard } from '../components/dashboard/MoodCheckInCard';
@@ -98,22 +99,12 @@ export function DashboardScreen({
   if (dailyHabits.length === 0) {
     return (
       <ScrollView
-        contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide]}
+        contentContainerStyle={[sharedStyles.screenScroll, sharedStyles.centeredWide, styles.emptyScroll]}
         showsVerticalScrollIndicator={false}
       >
         <AppHeader onPressProfile={onOpenProfile} subcopy={headerSubcopy} />
         <DateSelector datePills={datePills} onSelectDate={onSelectDate} selectedDate={selectedDate} />
-        <Panel>
-          <SectionHeader
-            title="No habits yet"
-            meta="Create your first routine to start tracking progress."
-            compact
-          />
-          <Pressable accessibilityLabel="Create habit" accessibilityRole="button" onPress={onCreateHabitRequest} style={styles.createButton}>
-            <Icon accent="mint" name="add-circle" size={16} />
-            <Text style={styles.createButtonText}>Create habit</Text>
-          </Pressable>
-        </Panel>
+        <DashboardEmptyState onCreateHabit={onCreateHabitRequest} />
       </ScrollView>
     );
   }
@@ -220,6 +211,9 @@ export function DashboardScreen({
 }
 
 const styles = StyleSheet.create({
+  emptyScroll: {
+    gap: spacing.lg,
+  },
   screenSections: {
     gap: spacing.lg,
   },
@@ -237,25 +231,6 @@ const styles = StyleSheet.create({
   },
   sideGrid: {
     gap: spacing.lg,
-  },
-  createButton: {
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: colors.primary,
-    borderRadius: radius.pill,
-    flexDirection: 'row',
-    gap: spacing.xs,
-    justifyContent: 'center',
-    minHeight: 36,
-    paddingHorizontal: spacing.sm + 4,
-    paddingVertical: spacing.xs + 2,
-  },
-  createButtonText: {
-    color: colors.onAccent,
-    fontSize: 13,
-    fontWeight: '800',
-    includeFontPadding: false,
-    lineHeight: 16,
   },
   sheetContent: {
     gap: spacing.md,
