@@ -39,7 +39,7 @@
     "android": "expo start --android",
     "android:offline": "EXPO_OFFLINE=1 expo start --android",
     "android:native": "JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ANDROID_HOME=$HOME/Library/Android/sdk expo run:android",
-    "android:apk": "JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ANDROID_HOME=$HOME/Library/Android/sdk NODE_ENV=production bash -lc 'cd android && ./gradlew assembleRelease'",
+    "android:apk": "JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ANDROID_HOME=$HOME/Library/Android/sdk NODE_ENV=production bash -lc 'cd android && ./gradlew assembleRelease && cd .. && mkdir -p dist && cp android/app/build/outputs/apk/release/app-release.apk dist/routinely-android-v$(node -p \"require(\\\"./package.json\\\").version\").apk'",
     "ios": "expo start --ios",
     "ios:offline": "EXPO_OFFLINE=1 expo start --ios",
     "ios:native": "expo run:ios",

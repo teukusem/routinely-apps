@@ -55,10 +55,16 @@ npm run android:native
 npm run android:apk
 ```
 
-The APK is written to:
+The Gradle APK is written to:
 
 ```text
 android/app/build/outputs/apk/release/app-release.apk
+```
+
+The same command also copies a shareable APK to:
+
+```text
+dist/routinely-android-v1.0.0.apk
 ```
 
 For a permanent Xcode setup:
